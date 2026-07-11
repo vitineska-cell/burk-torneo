@@ -403,3 +403,322 @@ if (typeof module !== "undefined") module.exports = {
   buildTandas: buildTandas, estimateTournament: estimateTournament, fmtDuration: fmtDuration,
   escHtml: escHtml, fmtDiff: fmtDiff, rafflePool: rafflePool, consRoundMatches: consRoundMatches
 };
+
+/* ═══════════════════════════════════════════════════════
+   BÜRK · mejora cuadros con tandas y pistas v1
+   Asignación automática estable + corrección manual en admin
+   ═══════════════════════════════════════════════════════ */
+(function () {
+  "use strict";
+
+  function validPositiveInt(v) {
+    return Number.isInteger(Number(v)) && Number(v) > 0;
+  }
+
+  function qfPotential(br) {
+    return br.qf.map(function (m) { return !!(m && (m.a || m.b)); });
+  }
+
+  function roundIsPlayable(br, round, idx) {
+    if (!br) return false;
+    if (round === "qf") {
+      var q = br.qf[idx];
+      return !!(q && q.a && q.b);
+    }
+    var qp = qfPotential(br);
+    if (round === "sf") {
+      return !!(qp[idx * 2] && qp[idx * 2 + 1]);
+    }
+    if (round === "f") {
+      var sf0 = !!(qp[0] || qp[1]);
+      var sf1 = !!(qp[2] || qp[3]);
+      return sf0 && sf1;
+    }
+    return false;
+  }
+
+  function bracketScheduleRefs(bracket) {
+    if (!bracket || !bracket.main || !bracket.cons) return [];
+    var refs = [];
+    ["qf", "sf", "f"].forEach(function (round) {
+      ["main", "cons"].forEach(function (draw) {
+        var br = bracket[draw];
+        (br[round] || []).forEach(function (match, idx) {
+if (!roundIsPlayable(br, round, idx)) return;
+refs.push({ draw: draw, round: round, idx: idx, match: match });
+        });
+      });
+    });
+    return refs;
+  }
+
+  function ensureBracketSchedule(bracket, courtCount, reset) {
+    if (!bracket) return false;
+    var courts = Math.max(1, Number(courtCount) || 1);
+    var changed = false;
+    var refs = bracketScheduleRefs(bracket);
+    var stages = ["qf", "sf", "f"];
+    var nextSlot = 1;
+
+    stages.forEach(function (round) {
+      var stage = refs.filter(function (r) { return r.round === round; });
+      stage.forEach(function (ref, i) {
+        var slot = nextSlot + Math.floor(i / courts);
+        var court = i % courts + 1;
+        if (reset || !validPositiveInt(ref.match.slot)) {
+if (Number(ref.match.slot) !== slot) changed = true;
+ref.match.slot = slot;
+        }
+        if (reset || !validPositiveInt(ref.match.court)) {
+if (Number(ref.match.court) !== court) changed = true;
+ref.match.court = court;
+        }
+      });
+      if (stage.length) nextSlot += Math.ceil(stage.length / courts);
+    });
+
+    if (reset || !validPositiveInt(bracket.scheduleCourts)) {
+      if (Number(bracket.scheduleCourts) !== courts) changed = true;
+      bracket.scheduleCourts = courts;
+    }
+    return changed;
+  }
+
+  function refKey(ref) {
+    return ref.draw + ":" + ref.round + ":" + ref.idx;
+  }
+
+  function maxScheduledSlot(bracket) {
+    var max = 0;
+    bracketScheduleRefs(bracket).forEach(function (ref) {
+      max = Math.max(max, Number(ref.match.slot) || 0);
+    });
+    return max;
+  }
+
+  function roundTitle(round) {
+    return round === "qf" ? "Cuartos" : round === "sf" ? "Semifinal" : "Final";
+  }
+
+  function drawTitle(draw) {
+    return draw === "main" ? "principal" : "consolación";
+  }
+
+  function matchCode(ref) {
+    return (ref.round === "qf" ? "QF" : ref.round === "sf" ? "SF" : "F") + (ref.idx + 1);
+  }
+
+  function participantsFor(br, round, idx) {
+    if (round === "qf") return [br.qf[idx].a, br.qf[idx].b];
+    var d = bracketDerived(br);
+    if (round === "sf") return d.sfPairs[idx] || [null, null];
+    return [d.sfW[0], d.sfW[1]];
+  }
+
+  function fallbackParticipants(ref) {
+    if (ref.round === "sf") {
+      return "Ganador QF" + (ref.idx * 2 + 1) + " / Ganador QF" + (ref.idx * 2 + 2);
+    }
+    if (ref.round === "f") return "Ganador SF1 / Ganador SF2";
+    return "Por definir";
+  }
+
+  function matchupText(bracket, ref) {
+    var p = participantsFor(bracket[ref.draw], ref.round, ref.idx);
+    if (p[0] && p[1]) return p[0].name + " — " + p[1].name;
+    if (p[0] || p[1]) return (p[0] || p[1]).name + " — Por definir";
+    return fallbackParticipants(ref);
+  }
+
+  function scheduleCollisions(bracket) {
+    var seen = {}, bad = {};
+    bracketScheduleRefs(bracket).forEach(function (ref) {
+      var k = Number(ref.match.slot) + ":" + Number(ref.match.court);
+      if (seen[k]) {
+        bad[k] = true;
+      } else {
+        seen[k] = true;
+      }
+    });
+    return bad;
+  }
+
+  function injectBracketStyles() {
+    if (document.getElementById("burk-bracket-courts-css")) return;
+    var style = document.createElement("style");
+    style.id = "burk-bracket-courts-css";
+    style.textContent = [
+      ".bk-label{display:flex;align-items:center;justify-content:space-between;gap:8px;padding-right:8px}",
+      ".bk-court-tag{display:inline-block;color:var(--gold);border:1px solid #3A3020;padding:2px 6px;font-family:Archivo,sans-serif;font-size:9px;letter-spacing:.08em;white-space:nowrap}",
+      ".bk-court-tag.off{color:var(--dim);border-color:var(--line)}",
+      ".bk-court-controls{display:flex;gap:8px;padding:8px 10px;border-top:1px solid var(--line2);background:#0C0C0E}",
+      ".bk-court-controls label{flex:1;font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--mut2)}",
+      ".bk-court-controls select{width:100%;margin-top:4px;background:#0A0A0B;border:1px solid #2A2A2F;color:#fff;padding:6px;font:600 11px Archivo,sans-serif}",
+      ".bracket-plan .panel-head{justify-content:space-between}",
+      ".bracket-plan-actions{margin-left:auto;display:flex;align-items:center;gap:8px}",
+      ".bracket-wave{border-top:1px solid var(--line2)}",
+      ".bracket-wave-head{padding:9px 14px;font:700 11px Archivo,sans-serif;letter-spacing:.16em;text-transform:uppercase;color:var(--gold);background:#11100C}",
+      ".bracket-plan-row{display:flex;align-items:center;gap:10px;padding:9px 14px;border-top:1px solid var(--line2)}",
+      ".bracket-plan-row:first-child{border-top:0}",
+      ".bracket-plan-row.conflict{background:#1B1010}",
+      ".bracket-plan-meta{min-width:145px;font-size:10px;color:var(--mut2);letter-spacing:.05em;text-transform:uppercase}",
+      ".bracket-plan-names{flex:1;min-width:0;font-size:12px;color:#B9B9C0;overflow-wrap:anywhere}",
+      ".bracket-warning{padding:9px 14px;color:#E7B14C;font-size:11px;border-top:1px solid #3A3020;background:#171307}",
+      "@media(max-width:640px){.bracket-plan-row{align-items:flex-start;flex-wrap:wrap}.bracket-plan-meta{min-width:0;width:100%}.bracket-plan-names{width:100%}}"
+    ].join("");
+    document.head.appendChild(style);
+  }
+
+  function optionList(max, selected) {
+    var html = "";
+    for (var i = 1; i <= max; i++) {
+      html += '<option value="' + i + '"' + (Number(selected) === i ? " selected" : "") + ">" + i + "</option>";
+    }
+    return html;
+  }
+
+  function buildPlanPanel(bracket, courtCount, editable, onReset) {
+    var refs = bracketScheduleRefs(bracket).slice().sort(function (a, b) {
+      return Number(a.match.slot) - Number(b.match.slot) || Number(a.match.court) - Number(b.match.court) || refKey(a).localeCompare(refKey(b));
+    });
+    var collisions = scheduleCollisions(bracket);
+    var panel = document.createElement("div");
+    panel.className = "panel bracket-plan";
+    var html = '<div class="panel-head gold"><span>Plan de pistas · cuadros</span>';
+    if (editable) html += '<span class="bracket-plan-actions"><button class="btn" type="button" id="btn-reset-bracket-courts">Recalcular pistas</button></span>';
+    html += "</div>";
+
+    if (Number(bracket.scheduleCourts) !== Number(courtCount)) {
+      html += '<div class="bracket-warning">⚠ Los cuadros se planificaron con ' + escHtml(bracket.scheduleCourts) + " pista(s), pero ahora hay " + escHtml(courtCount) + ". Pulsa Recalcular pistas para adaptarlos.</div>";
+    }
+
+    var currentSlot = null;
+    refs.forEach(function (ref) {
+      var slot = Number(ref.match.slot), court = Number(ref.match.court);
+      if (slot !== currentSlot) {
+        if (currentSlot !== null) html += "</div>";
+        currentSlot = slot;
+        html += '<div class="bracket-wave"><div class="bracket-wave-head">Tanda ' + slot + "</div>";
+      }
+      var collision = collisions[slot + ":" + court];
+      html += '<div class="bracket-plan-row' + (collision ? " conflict" : "") + '">' +
+        '<span class="pista-chip">PISTA ' + court + "</span>" +
+        '<span class="bracket-plan-meta">' + escHtml(roundTitle(ref.round) + " " + drawTitle(ref.draw) + " · " + matchCode(ref)) + "</span>" +
+        '<span class="bracket-plan-names">' + escHtml(matchupText(bracket, ref)) + (collision ? " · ⚠ pista duplicada" : "") + "</span></div>";
+    });
+    if (currentSlot !== null) html += "</div>";
+    if (!refs.length) html += '<div class="empty">No hay partidos eliminatorios que necesiten pista.</div>';
+    html += '<div class="hint">Cada tanda empieza cuando han terminado los partidos necesarios de la anterior. La asignación se genera automáticamente y, desde el panel, puede corregirse manualmente.</div>';
+    panel.innerHTML = html;
+    if (editable) {
+      var reset = panel.querySelector("#btn-reset-bracket-courts");
+      if (reset) reset.addEventListener("click", onReset);
+    }
+    return panel;
+  }
+
+  function drawPanel(container, draw) {
+    var panels = container.querySelectorAll(".panel");
+    for (var i = 0; i < panels.length; i++) {
+      var head = panels[i].querySelector(".panel-head");
+      if (!head) continue;
+      var text = head.textContent.toLowerCase();
+      if (draw === "main" && text.indexOf("cuadro principal") !== -1) return panels[i];
+      if (draw === "cons" && text.indexOf("consolación") !== -1) return panels[i];
+    }
+    return null;
+  }
+
+  function decorateMatches(container, bracket, editable, courtCount, onChange) {
+    var active = {};
+    bracketScheduleRefs(bracket).forEach(function (ref) { active[refKey(ref)] = ref; });
+    ["main", "cons"].forEach(function (draw) {
+      var panel = drawPanel(container, draw);
+      if (!panel) return;
+      var nodes = panel.querySelectorAll(".bk-match");
+      var ordered = [];
+      ["qf", "sf", "f"].forEach(function (round) {
+        (bracket[draw][round] || []).forEach(function (match, idx) {
+ordered.push({ draw: draw, round: round, idx: idx, match: match });
+        });
+      });
+      nodes.forEach(function (node, i) {
+        var ref = ordered[i];
+        if (!ref) return;
+        var scheduled = active[refKey(ref)];
+        var label = node.querySelector(".bk-label");
+        if (label) {
+var tag = document.createElement("span");
+tag.className = "bk-court-tag" + (scheduled ? "" : " off");
+tag.textContent = scheduled ? "TANDA " + ref.match.slot + " · PISTA " + ref.match.court : (ref.round === "qf" && ((ref.match.a && !ref.match.b) || (!ref.match.a && ref.match.b)) ? "PASE DIRECTO" : "SIN PARTIDO");
+label.appendChild(tag);
+        }
+        if (!editable || !scheduled) return;
+        var controls = document.createElement("div");
+        controls.className = "bk-court-controls";
+        var slotMax = Math.max(6, maxScheduledSlot(bracket) + 2);
+        controls.innerHTML = '<label>Tanda<select data-kind="slot">' + optionList(slotMax, ref.match.slot) + '</select></label>' +
+'<label>Pista<select data-kind="court">' + optionList(Math.max(1, Number(courtCount) || 1), ref.match.court) + "</select></label>";
+        controls.querySelectorAll("select").forEach(function (select) {
+select.addEventListener("change", function () {
+  ref.match[select.dataset.kind] = Number(select.value);
+  onChange();
+});
+        });
+        node.appendChild(controls);
+      });
+    });
+  }
+
+  function installAdminEnhancement() {
+    var original = window.renderCuadros;
+    if (typeof original !== "function") return;
+    window.renderCuadros = function () {
+      var changed = false;
+      if (state && state.bracket) changed = ensureBracketSchedule(state.bracket, courts(), false);
+      if (changed && typeof markDirty === "function") markDirty();
+      original();
+      var container = document.getElementById("v-cuadros");
+      if (!container || !state.bracket) return;
+      decorateMatches(container, state.bracket, true, courts(), function () {
+        if (typeof markDirty === "function") markDirty();
+        window.renderCuadros();
+      });
+      var plan = buildPlanPanel(state.bracket, courts(), true, function () {
+        ensureBracketSchedule(state.bracket, courts(), true);
+        if (typeof markDirty === "function") markDirty();
+        window.renderCuadros();
+      });
+      container.insertBefore(plan, container.firstChild);
+    };
+    window.renderCuadros();
+  }
+
+  function installPublicEnhancement() {
+    var original = window.renderCuadros;
+    if (typeof original !== "function") return;
+    window.renderCuadros = function () {
+      if (DATA && DATA.bracket) ensureBracketSchedule(DATA.bracket, courts(), false);
+      original();
+      var container = document.getElementById("v-cuadros");
+      if (!container || !DATA || !DATA.bracket) return;
+      decorateMatches(container, DATA.bracket, false, courts(), function () {});
+      container.insertBefore(buildPlanPanel(DATA.bracket, courts(), false, function () {}), container.firstChild);
+    };
+    window.renderCuadros();
+  }
+
+  if (typeof module !== "undefined" && module.exports) {
+    module.exports.bracketScheduleRefs = bracketScheduleRefs;
+    module.exports.ensureBracketSchedule = ensureBracketSchedule;
+    module.exports.roundIsPlayable = roundIsPlayable;
+  }
+
+  if (typeof document === "undefined") return;
+  document.addEventListener("DOMContentLoaded", function () {
+    injectBracketStyles();
+    if (document.getElementById("v-inscripcion")) installAdminEnhancement();
+    else installPublicEnhancement();
+  });
+}());
+
