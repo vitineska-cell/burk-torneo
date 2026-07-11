@@ -1,7 +1,7 @@
 {
   "meta": {
     "title": "BÜRK · TORNEO NOCTURNO EN DIRECTO",
-    "updatedAt": "2026-07-11T17:34:24.777Z",
+    "updatedAt": "2026-07-11T17:34:48.043Z",
     "courts": 5
   },
   "pairs": [
@@ -169,7 +169,233 @@
     ]
   ],
   "results": {},
-  "bracket": null,
+  "bracket": {
+    "main": {
+      "qf": [
+        {
+          "s1": "",
+          "s2": "",
+          "aId": null,
+          "bId": null,
+          "a": {
+            "id": "pmrgn5z2s4",
+            "name": "afaSFaf / FGAfas",
+            "group": 0,
+            "letter": "A"
+          },
+          "b": {
+            "id": "pmrgn68kn10",
+            "name": "ASGFagfs / aGagf",
+            "group": 3,
+            "letter": "D"
+          },
+          "slot": 1,
+          "court": 1
+        },
+        {
+          "s1": "",
+          "s2": "",
+          "aId": null,
+          "bId": null,
+          "a": {
+            "id": "pmrgn6rl223",
+            "name": "ASGFagfs / ASGFagfs",
+            "group": 2,
+            "letter": "C"
+          },
+          "b": {
+            "id": "pmrgn6e1412",
+            "name": "ASGFagfs / ASGFagfs",
+            "group": 4,
+            "letter": "E"
+          },
+          "slot": 1,
+          "court": 2
+        },
+        {
+          "s1": "",
+          "s2": "",
+          "aId": null,
+          "bId": null,
+          "a": {
+            "id": "pmrgn60qz5",
+            "name": "AGFAgfa / agaGSFa",
+            "group": 3,
+            "letter": "D"
+          },
+          "b": {
+            "id": "pmrgn6g2q13",
+            "name": "ASGFagfs / ASGFagfs",
+            "group": 1,
+            "letter": "B"
+          },
+          "slot": 1,
+          "court": 3
+        },
+        {
+          "s1": "",
+          "s2": "",
+          "aId": null,
+          "bId": null,
+          "a": {
+            "id": "pmrgn6iep15",
+            "name": "ASGFagfs / ASGFagfs",
+            "group": 1,
+            "letter": "B"
+          },
+          "b": {
+            "id": "pmrgn63y87",
+            "name": "agfagfa / GAgf",
+            "group": 0,
+            "letter": "A"
+          },
+          "slot": 1,
+          "court": 4
+        }
+      ],
+      "sf": [
+        {
+          "s1": "",
+          "s2": "",
+          "aId": null,
+          "bId": null,
+          "slot": 3,
+          "court": 1
+        },
+        {
+          "s1": "",
+          "s2": "",
+          "aId": null,
+          "bId": null,
+          "slot": 3,
+          "court": 2
+        }
+      ],
+      "f": [
+        {
+          "s1": "",
+          "s2": "",
+          "aId": null,
+          "bId": null,
+          "slot": 4,
+          "court": 1
+        }
+      ]
+    },
+    "cons": {
+      "qf": [
+        {
+          "s1": "",
+          "s2": "",
+          "aId": null,
+          "bId": null,
+          "a": {
+            "id": "pmrgn69zq11",
+            "name": "ASGFagfs / ASGFagfs",
+            "group": 2,
+            "letter": "C"
+          },
+          "b": {
+            "id": "pmrgn6nto20",
+            "name": "ASGFagfs / ASGFagfs",
+            "group": 4,
+            "letter": "E"
+          },
+          "slot": 1,
+          "court": 5
+        },
+        {
+          "s1": "",
+          "s2": "",
+          "aId": null,
+          "bId": null,
+          "a": {
+            "id": "pmrgn6qfm22",
+            "name": "ASGFagfs / ASGFagfs",
+            "group": 1,
+            "letter": "B"
+          },
+          "b": {
+            "id": "pmrgn6lwj18",
+            "name": "ASGFagfs / ASGFagfs",
+            "group": 2,
+            "letter": "C"
+          },
+          "slot": 2,
+          "court": 1
+        },
+        {
+          "s1": "",
+          "s2": "",
+          "aId": null,
+          "bId": null,
+          "a": {
+            "id": "pmrgn6sh924",
+            "name": "ASGFagfs / ASGFagfs",
+            "group": 4,
+            "letter": "E"
+          },
+          "b": {
+            "id": "pmrgn6tqu25",
+            "name": "ASGFagfs / ASGFagfs",
+            "group": 0,
+            "letter": "A"
+          },
+          "slot": 2,
+          "court": 2
+        },
+        {
+          "s1": "",
+          "s2": "",
+          "aId": null,
+          "bId": null,
+          "a": {
+            "id": "pmrgn5ssq1",
+            "name": "asAD / ASDAFD",
+            "group": 0,
+            "letter": "A"
+          },
+          "b": {
+            "id": "pmrgn6mxt19",
+            "name": "ASGFagfs / ASGFagfs",
+            "group": 3,
+            "letter": "D"
+          },
+          "slot": 2,
+          "court": 3
+        }
+      ],
+      "sf": [
+        {
+          "s1": "",
+          "s2": "",
+          "aId": null,
+          "bId": null,
+          "slot": 3,
+          "court": 3
+        },
+        {
+          "s1": "",
+          "s2": "",
+          "aId": null,
+          "bId": null,
+          "slot": 3,
+          "court": 4
+        }
+      ],
+      "f": [
+        {
+          "s1": "",
+          "s2": "",
+          "aId": null,
+          "bId": null,
+          "slot": 4,
+          "court": 2
+        }
+      ]
+    },
+    "scheduleCourts": 5
+  },
   "raffle": {
     "winners": []
   }
