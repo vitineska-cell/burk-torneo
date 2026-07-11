@@ -1,0 +1,120 @@
+{
+  "meta": {
+    "title": "BÜRK · TORNEO EN DIRECTO",
+    "updatedAt": null
+  },
+  "teams": {
+    "A": [
+      {
+        "id": "A1",
+        "name": "Pareja A1"
+      },
+      {
+        "id": "A2",
+        "name": "Pareja A2"
+      },
+      {
+        "id": "A3",
+        "name": "Pareja A3"
+      },
+      {
+        "id": "A4",
+        "name": "Pareja A4"
+      },
+      {
+        "id": "A5",
+        "name": "Pareja A5"
+      }
+    ],
+    "B": [
+      {
+        "id": "B1",
+        "name": "Pareja B1"
+      },
+      {
+        "id": "B2",
+        "name": "Pareja B2"
+      },
+      {
+        "id": "B3",
+        "name": "Pareja B3"
+      },
+      {
+        "id": "B4",
+        "name": "Pareja B4"
+      },
+      {
+        "id": "B5",
+        "name": "Pareja B5"
+      }
+    ],
+    "C": [
+      {
+        "id": "C1",
+        "name": "Pareja C1"
+      },
+      {
+        "id": "C2",
+        "name": "Pareja C2"
+      },
+      {
+        "id": "C3",
+        "name": "Pareja C3"
+      },
+      {
+        "id": "C4",
+        "name": "Pareja C4"
+      },
+      {
+        "id": "C5",
+        "name": "Pareja C5"
+      }
+    ],
+    "D": [
+      {
+        "id": "D1",
+        "name": "Pareja D1"
+      },
+      {
+        "id": "D2",
+        "name": "Pareja D2"
+      },
+      {
+        "id": "D3",
+        "name": "Pareja D3"
+      },
+      {
+        "id": "D4",
+        "name": "Pareja D4"
+      },
+      {
+        "id": "D5",
+        "name": "Pareja D5"
+      }
+    ],
+    "E": [
+      {
+        "id": "E1",
+        "name": "Pareja E1"
+      },
+      {
+        "id": "E2",
+        "name": "Pareja E2"
+      },
+      {
+        "id": "E3",
+        "name": "Pareja E3"
+      },
+      {
+        "id": "E4",
+        "name": "Pareja E4"
+      },
+      {
+        "id": "E5",
+        "name": "Pareja E5"
+      }
+    ]
+  },
+  "results": {},
+  "bracket": null
+}
