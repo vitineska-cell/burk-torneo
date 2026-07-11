@@ -1,87 +1,171 @@
 {
   "meta": {
     "title": "BÜRK · TORNEO NOCTURNO EN DIRECTO",
-    "updatedAt": "2026-07-11T17:09:31.287Z",
+    "updatedAt": "2026-07-11T17:34:24.777Z",
     "courts": 5
   },
   "pairs": [
     {
-      "id": "pmrgjipik1",
-      "p1": "RAFA\tCECILIO",
-      "p2": "Chema\tBravo Balmori"
+      "id": "pmrgn5ssq1",
+      "p1": "asAD",
+      "p2": "ASDAFD"
     },
     {
-      "id": "pmrgjkh0i2",
-      "p1": "RAFAEL\tGODINO GARCIA",
-      "p2": "ELENA\tSANZ LIÑEIRA"
+      "id": "pmrgn5w0a2",
+      "p1": "SFDSAFD",
+      "p2": "AFaf"
     },
     {
-      "id": "pmrgjkpea3",
-      "p1": "Javier\tRamos Dominguez",
-      "p2": "jose Luis\tFernandez Arevalo"
+      "id": "pmrgn5xll3",
+      "p1": "Ff",
+      "p2": "fafF"
     },
     {
-      "id": "pmrgjkyqk4",
-      "p1": "Juan Manuel\tCañas",
-      "p2": "Maché\tHernandez"
+      "id": "pmrgn5z2s4",
+      "p1": "afaSFaf",
+      "p2": "FGAfas"
     },
     {
-      "id": "pmrgjl2xu5",
-      "p1": "Raul\tFernández Pulido",
-      "p2": "Oscar\tFernandez Pulido"
+      "id": "pmrgn60qz5",
+      "p1": "AGFAgfa",
+      "p2": "agaGSFa"
     },
     {
-      "id": "pmrgjl9426",
-      "p1": "José Luis\tCastañeda",
-      "p2": "Mariau\tAyerra Díaz"
+      "id": "pmrgn62is6",
+      "p1": "GAgfAGF",
+      "p2": "AgfaGF"
     },
     {
-      "id": "pmrgjlj217",
-      "p1": "Mario\tPlayá Serra",
-      "p2": "Laudelino\tQuintero"
+      "id": "pmrgn63y87",
+      "p1": "agfagfa",
+      "p2": "GAgf"
     },
     {
-      "id": "pmrgjlqfo8",
-      "p1": "Javier\tHidalgo Rodríguez",
-      "p2": "Javier\tHidalgo Martín"
+      "id": "pmrgn65d08",
+      "p1": "gAGg",
+      "p2": "agAGFagsf"
     },
     {
-      "id": "pmrgjlwus9",
-      "p1": "Victoria\tAlzina",
-      "p2": "Raúl\tBravo"
+      "id": "pmrgn67379",
+      "p1": "GASgaSGa",
+      "p2": "AGAgs"
     },
     {
-      "id": "pmrgjm3om10",
-      "p1": "Jose Antonio\tJaramillo mendes",
-      "p2": "Marisol\tJuarez roncero"
+      "id": "pmrgn68kn10",
+      "p1": "ASGFagfs",
+      "p2": "aGagf"
     },
     {
-      "id": "pmrgjmd1m11",
-      "p1": "Francisco\tRamos Sánchez",
-      "p2": "Francisco Javier\tDe Marcos del Pozo"
+      "id": "pmrgn69zq11",
+      "p1": "ASGFagfs",
+      "p2": "ASGFagfs"
     },
     {
-      "id": "pmrgjmj2a12",
-      "p1": "Facundo\tLópez",
-      "p2": "Alex\tSalar"
+      "id": "pmrgn6e1412",
+      "p1": "ASGFagfs",
+      "p2": "ASGFagfs"
+    },
+    {
+      "id": "pmrgn6g2q13",
+      "p1": "ASGFagfs",
+      "p2": "ASGFagfs"
+    },
+    {
+      "id": "pmrgn6hei14",
+      "p1": "ASGFagfs",
+      "p2": "ASGFagfs"
+    },
+    {
+      "id": "pmrgn6iep15",
+      "p1": "ASGFagfs",
+      "p2": "ASGFagfs"
+    },
+    {
+      "id": "pmrgn6jia16",
+      "p1": "ASGFagfs",
+      "p2": "ASGFagfs"
+    },
+    {
+      "id": "pmrgn6kw317",
+      "p1": "ASGFagfs",
+      "p2": "ASGFagfs"
+    },
+    {
+      "id": "pmrgn6lwj18",
+      "p1": "ASGFagfs",
+      "p2": "ASGFagfs"
+    },
+    {
+      "id": "pmrgn6mxt19",
+      "p1": "ASGFagfs",
+      "p2": "ASGFagfs"
+    },
+    {
+      "id": "pmrgn6nto20",
+      "p1": "ASGFagfs",
+      "p2": "ASGFagfs"
+    },
+    {
+      "id": "pmrgn6orv21",
+      "p1": "ASGFagfs",
+      "p2": "ASGFagfs"
+    },
+    {
+      "id": "pmrgn6qfm22",
+      "p1": "ASGFagfs",
+      "p2": "ASGFagfs"
+    },
+    {
+      "id": "pmrgn6rl223",
+      "p1": "ASGFagfs",
+      "p2": "ASGFagfs"
+    },
+    {
+      "id": "pmrgn6sh924",
+      "p1": "ASGFagfs",
+      "p2": "ASGFagfs"
+    },
+    {
+      "id": "pmrgn6tqu25",
+      "p1": "ASGFagfs",
+      "p2": "ASGFagfs"
     }
   ],
   "groups": [
     [
-      "pmrgjl9426",
-      "pmrgjmj2a12",
-      "pmrgjlwus9",
-      "pmrgjkyqk4",
-      "pmrgjkh0i2",
-      "pmrgjm3om10"
+      "pmrgn5w0a2",
+      "pmrgn5ssq1",
+      "pmrgn5z2s4",
+      "pmrgn63y87",
+      "pmrgn6tqu25"
     ],
     [
-      "pmrgjlqfo8",
-      "pmrgjmd1m11",
-      "pmrgjkpea3",
-      "pmrgjl2xu5",
-      "pmrgjlj217",
-      "pmrgjipik1"
+      "pmrgn6iep15",
+      "pmrgn6g2q13",
+      "pmrgn6qfm22",
+      "pmrgn67379",
+      "pmrgn6kw317"
+    ],
+    [
+      "pmrgn5xll3",
+      "pmrgn6rl223",
+      "pmrgn69zq11",
+      "pmrgn6lwj18",
+      "pmrgn6jia16"
+    ],
+    [
+      "pmrgn68kn10",
+      "pmrgn6mxt19",
+      "pmrgn6orv21",
+      "pmrgn60qz5",
+      "pmrgn6hei14"
+    ],
+    [
+      "pmrgn6e1412",
+      "pmrgn6sh924",
+      "pmrgn65d08",
+      "pmrgn6nto20",
+      "pmrgn62is6"
     ]
   ],
   "results": {},
