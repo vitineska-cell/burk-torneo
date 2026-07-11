@@ -1,7 +1,7 @@
 {
   "meta": {
     "title": "BÜRK · TORNEO NOCTURNO EN DIRECTO",
-    "updatedAt": "2026-07-11T15:59:53.929Z",
+    "updatedAt": "2026-07-11T16:02:51.756Z",
     "courts": 5
   },
   "pairs": [
@@ -206,7 +206,184 @@
       "s2": "12"
     }
   },
-  "bracket": null,
+  "bracket": {
+    "main": {
+      "qf": [
+        {
+          "s1": "10",
+          "s2": "12",
+          "aId": "pmrgjl2xu5",
+          "bId": "pmrgjipik1",
+          "a": {
+            "id": "pmrgjl2xu5",
+            "name": "Raul\tFernández Pulido / Oscar\tFernandez Pulido",
+            "group": 1,
+            "letter": "B"
+          },
+          "b": {
+            "id": "pmrgjipik1",
+            "name": "RAFA\tCECILIO / Chema\tBravo Balmori",
+            "group": 0,
+            "letter": "A"
+          }
+        },
+        {
+          "s1": "10",
+          "s2": "12",
+          "aId": "pmrgjlqfo8",
+          "bId": "pmrgjm3om10",
+          "a": {
+            "id": "pmrgjlqfo8",
+            "name": "Javier\tHidalgo Rodríguez / Javier\tHidalgo Martín",
+            "group": 1,
+            "letter": "B"
+          },
+          "b": {
+            "id": "pmrgjm3om10",
+            "name": "Jose Antonio\tJaramillo mendes / Marisol\tJuarez roncero",
+            "group": 0,
+            "letter": "A"
+          }
+        },
+        {
+          "s1": "12",
+          "s2": "10",
+          "aId": "pmrgjl9426",
+          "bId": "pmrgjkpea3",
+          "a": {
+            "id": "pmrgjl9426",
+            "name": "José Luis\tCastañeda / Mariau\tAyerra Díaz",
+            "group": 0,
+            "letter": "A"
+          },
+          "b": {
+            "id": "pmrgjkpea3",
+            "name": "Javier\tRamos Dominguez / jose Luis\tFernandez Arevalo",
+            "group": 1,
+            "letter": "B"
+          }
+        },
+        {
+          "s1": "10",
+          "s2": "12",
+          "aId": "pmrgjmd1m11",
+          "bId": "pmrgjlj217",
+          "a": {
+            "id": "pmrgjmd1m11",
+            "name": "Francisco\tRamos Sánchez / Francisco Javier\tDe Marcos del Pozo",
+            "group": 0,
+            "letter": "A"
+          },
+          "b": {
+            "id": "pmrgjlj217",
+            "name": "Mario\tPlayá Serra / Laudelino\tQuintero",
+            "group": 1,
+            "letter": "B"
+          }
+        }
+      ],
+      "sf": [
+        {
+          "s1": "12",
+          "s2": "11",
+          "aId": "pmrgjipik1",
+          "bId": "pmrgjm3om10"
+        },
+        {
+          "s1": "12",
+          "s2": "10",
+          "aId": "pmrgjl9426",
+          "bId": "pmrgjlj217"
+        }
+      ],
+      "f": [
+        {
+          "s1": "11",
+          "s2": "10",
+          "aId": "pmrgjipik1",
+          "bId": "pmrgjl9426"
+        }
+      ]
+    },
+    "cons": {
+      "qf": [
+        {
+          "s1": "",
+          "s2": "",
+          "aId": null,
+          "bId": null,
+          "a": {
+            "id": "pmrgjkyqk4",
+            "name": "Juan Manuel\tCañas / Maché\tHernandez",
+            "group": 0,
+            "letter": "A"
+          },
+          "b": null
+        },
+        {
+          "s1": "",
+          "s2": "",
+          "aId": null,
+          "bId": null,
+          "a": {
+            "id": "pmrgjkh0i2",
+            "name": "RAFAEL\tGODINO GARCIA / ELENA\tSANZ LIÑEIRA",
+            "group": 1,
+            "letter": "B"
+          },
+          "b": null
+        },
+        {
+          "s1": "",
+          "s2": "",
+          "aId": null,
+          "bId": null,
+          "a": {
+            "id": "pmrgjlwus9",
+            "name": "Victoria\tAlzina / Raúl\tBravo",
+            "group": 1,
+            "letter": "B"
+          },
+          "b": null
+        },
+        {
+          "s1": "",
+          "s2": "",
+          "aId": null,
+          "bId": null,
+          "a": {
+            "id": "pmrgjmj2a12",
+            "name": "Facundo\tLópez / Alex\tSalar",
+            "group": 0,
+            "letter": "A"
+          },
+          "b": null
+        }
+      ],
+      "sf": [
+        {
+          "s1": "11",
+          "s2": "10",
+          "aId": "pmrgjkyqk4",
+          "bId": "pmrgjkh0i2"
+        },
+        {
+          "s1": "11",
+          "s2": "10",
+          "aId": "pmrgjlwus9",
+          "bId": "pmrgjmj2a12"
+        }
+      ],
+      "f": [
+        {
+          "s1": "12",
+          "s2": "10",
+          "aId": "pmrgjkyqk4",
+          "bId": "pmrgjlwus9"
+        }
+      ]
+    }
+  },
   "raffle": {
     "winners": [
       {
