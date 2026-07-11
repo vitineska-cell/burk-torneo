@@ -1,5 +1,6 @@
 name: Corregir carga inicial de cuadros
 
+# Segunda actualización para activar el workflow ya registrado en main.
 on:
   push:
     branches:
