@@ -1,187 +1,174 @@
-# BÜRK · Torneo en directo — GUÍA PASO A PASO
+# BÜRK · Torneo en directo — GUÍA v2
 
-Sistema de resultados en directo para el torneo Round Robin (5 grupos × 5 parejas,
-cuadro principal + consolación). **Gratis, sin que los espectadores necesiten
-cuenta de nada:** pinchan el enlace y ven el torneo.
+Sistema completo de torneo Round Robin con **formato dinámico** (de 10 a 25
+parejas), resultados en directo, cuadros principal y de consolación, y
+**sorteo de premios entre jugadores**. Gratis y sin que los espectadores
+necesiten cuenta de nada.
 
 ## Qué contiene este paquete
 
-| Archivo      | Qué es                                                                 |
-|--------------|------------------------------------------------------------------------|
-| `index.html` | **El visor público.** El enlace que compartes. Solo lectura, se actualiza solo cada 30 s. |
-| `admin.html` | **Tu panel de organizador.** Aquí metes nombres y resultados, y publicas. |
-| `datos.json` | El archivo de datos que conecta ambos. **No lo edites ni lo borres a mano.** |
-| `GUIA.md`    | Esta guía.                                                              |
+| Archivo      | Qué es                                                                    |
+|--------------|---------------------------------------------------------------------------|
+| `index.html` | **El visor público.** El enlace que compartes. Se actualiza solo cada 30 s.|
+| `admin.html` | **Tu panel de organizador.** Inscripción, sorteos, resultados y publicación.|
+| `torneo.js`  | La lógica del torneo (la comparten las dos páginas). No lo edites.        |
+| `datos.json` | El archivo de datos. **No lo edites ni lo borres a mano.**                 |
+| `GUIA.md`    | Esta guía.                                                                 |
 
-Cómo funciona: tú escribes en `admin.html` desde tu PC y pulsas **Guardar y
-publicar**; eso actualiza `datos.json` en GitHub, y el visor público lo lee.
-Los cambios tardan **menos de 1 minuto** en verse en la página pública.
-
----
-
-## FASE 1 · Crear el repositorio y subir los archivos (~5 min)
-
-1. Entra en **github.com** con tu cuenta.
-2. Arriba a la derecha, pulsa **+** → **New repository**.
-3. Rellena:
-   - **Repository name:** `burk-torneo` (o el que quieras, sin espacios).
-   - **Public** (obligatorio para que GitHub Pages sea gratis).
-   - NO marques "Add a README".
-4. Pulsa **Create repository**.
-5. En la página del repositorio recién creado, pulsa el enlace
-   **uploading an existing file** (o botón **Add file → Upload files**).
-6. Arrastra los 4 archivos de este ZIP (`index.html`, `admin.html`,
-   `datos.json`, `GUIA.md`).
-7. Abajo, pulsa **Commit changes**.
-
-✅ Comprobación: en la portada del repositorio ves los 4 archivos.
+Tus enlaces (guárdalos en favoritos):
+- **Público:** `https://vitineska-cell.github.io/burk-torneo/`
+- **Tu panel:** `https://vitineska-cell.github.io/burk-torneo/admin.html`
 
 ---
 
-## FASE 2 · Activar GitHub Pages (~2 min)
+## FASE 1 · Actualizar el repositorio (~3 min) — ÚNICO PASO TÉCNICO
 
-1. En el repositorio, pestaña **Settings** (arriba).
-2. Menú lateral izquierdo → **Pages**.
-3. En **Build and deployment → Source**, elige **Deploy from a branch**.
-4. En **Branch**, elige `main` y carpeta `/ (root)`. Pulsa **Save**.
-5. Espera 1–2 minutos y recarga la página: arriba aparecerá tu dirección,
-   del tipo:
+Ya tienes hecho lo difícil (repositorio, GitHub Pages, token y conexión del
+panel). Solo hay que sustituir los archivos por esta versión:
 
-   `https://TU-USUARIO.github.io/burk-torneo/`
+1. Entra en `github.com/vitineska-cell/burk-torneo`.
+2. **Add file → Upload files**.
+3. Arrastra los **5 archivos** de este ZIP. GitHub sustituye automáticamente
+   los que se llaman igual.
+4. **Commit changes**. En 1–2 minutos la web pública y tu panel serán la
+   versión nueva.
 
-✅ Comprobación: abre esa dirección en el navegador. Debe verse el visor
-BÜRK con los grupos y "Pareja A1, A2…" de relleno. **Ese es el enlace
-público** que compartirás.
+Tu token y tu configuración **siguen funcionando sin tocar nada** (el panel
+usa la misma configuración guardada en tu navegador).
 
-Tu panel de organizador está en la misma dirección añadiendo `admin.html`:
-
-   `https://TU-USUARIO.github.io/burk-torneo/admin.html`
-
-> Nota: la página de admin también es visible públicamente, pero **sin tu
-> token nadie puede escribir nada**. Aun así, no publiques ese enlace: es
-> solo para ti.
+> Nota: esta versión estrena los datos desde cero (inscripción vacía).
+> Los nombres de prueba que hubieras metido en la versión anterior no se
+> conservan — no importa, ahora se meten por el nuevo flujo de inscripción.
 
 ---
 
-## FASE 3 · Crear tu "llave" (token de GitHub) (~4 min)
+## FASE 2 · Conoce tu panel (5 min de paseo)
 
-El token es lo que permite a tu panel escribir en el repositorio. Se crea
-una vez y se pega una vez en tu PC.
+Cinco pestañas, en el orden natural del torneo:
 
-1. En GitHub, pulsa tu **foto de perfil** (arriba dcha.) → **Settings**.
-2. Baja del todo en el menú izquierdo → **Developer settings**.
-3. **Personal access tokens** → **Fine-grained tokens** → **Generate new token**.
-4. Rellena:
-   - **Token name:** `torneo-burk`
-   - **Expiration:** elige **Custom** y pon una fecha 2–3 días después
-     del torneo (así caduca sola y te olvidas).
-   - **Repository access:** marca **Only select repositories** y elige
-     `burk-torneo`.
-   - **Permissions → Repository permissions:** busca **Contents** y ponlo
-     en **Read and write**. (Todo lo demás, sin tocar.)
-5. Pulsa **Generate token** y **cópialo** (empieza por `github_pat_…`).
-   ⚠️ Solo se muestra una vez: pégalo directamente en la Fase 4 o guárdalo
-   en un lugar seguro. **No lo compartas con nadie.**
+- **Inscripción** — título del torneo, nº de pistas, lista de parejas (con
+  los **dos jugadores** de cada una: importante para el sorteo de premios),
+  botón **Sortear grupos** y el **estimador de duración** (solo lo ves tú).
+- **Resultados** — vista **POR TANDAS** (rondas de partidos simultáneos con
+  su pista asignada: tu vista del día del torneo) y vista por grupo (A, B,
+  C…) con la clasificación en vivo.
+- **Clasificados** — los 8 del cuadro principal y los de consolación, con el
+  criterio aplicado, y el botón **Generar cuadros**.
+- **Cuadros** — cuartos, semis y final editables; los ganadores avanzan solos.
+- **Sorteo** — el sorteo de premios (ver Fase 5).
 
----
-
-## FASE 4 · Configurar tu panel en el PC (~2 min)
-
-1. En el **PC que usarás el día del torneo**, abre
-   `https://TU-USUARIO.github.io/burk-torneo/admin.html`
-   (guárdala en favoritos).
-2. Se abrirá el recuadro **Conexión con GitHub** (si no, botón **⚙ Configuración**):
-   - **Tu usuario de GitHub:** tu nombre de usuario (el de la URL).
-   - **Nombre del repositorio:** `burk-torneo`.
-   - **Token:** pega el `github_pat_…` de la Fase 3.
-3. Pulsa **Probar conexión** → debe decir "✓ Conexión correcta".
-4. Pulsa **Guardar configuración**.
-
-La configuración queda guardada en ese navegador: no tendrás que volver a
-tocarla. El estado arriba pasará a "Conexión lista".
+Y arriba siempre: **Guardar y publicar** (sube los cambios a la página
+pública), **Copiar resumen** (texto para WhatsApp), **Cargar publicado** y
+**⚙ Configuración**. El punto ámbar "Cambios sin publicar" te avisa si
+tienes cosas pendientes de subir.
 
 ---
 
-## FASE 5 · Prueba general (esta semana, ~15 min)
+## FASE 3 · Ensayo general (esta semana, ~20 min)
 
-1. En el panel, pestaña **Parejas**: escribe los nombres reales de las 25
-   parejas (o unos cuantos de prueba).
-2. Pestaña **Resultados**: elige el grupo A y apunta un marcador de prueba
-   (p. ej. 11 – 7). Verás la clasificación recalcularse al instante.
-3. Pulsa **Guardar y publicar** → debe salir "✓ Publicado".
-4. Abre el **enlace público** desde tu móvil (mejor aún: pídeselo a alguien
-   sin cuenta de GitHub ni de nada). En menos de 1 minuto deben verse los
-   nombres y el resultado de prueba.
-5. Si todo va bien, borra el marcador de prueba (déjalo vacío) y vuelve a
-   **Guardar y publicar**.
+Prueba el flujo completo con datos inventados:
 
-✅ Si esta fase funciona, el día del torneo funcionará igual.
-
----
-
-## FASE 6 · Enlace en la web de BÜRK y difusión (~10 min)
-
-**Opción A (recomendada para este torneo): botón en la web.**
-En WordPress/WooCommerce: crea una página o entrada "Torneo en directo"
-y añade un bloque **Botones** con el texto "🔴 Resultados en directo"
-enlazando a `https://TU-USUARIO.github.io/burk-torneo/`.
-
-**Opción B (más integrada, para más adelante): incrustado en tu web.**
-En la página de WordPress, añade un bloque **HTML personalizado** y pega:
-
-```html
-<iframe src="https://TU-USUARIO.github.io/burk-torneo/"
-        style="width:100%;height:1600px;border:0;" loading="lazy"
-        title="Torneo BÜRK en directo"></iframe>
-```
-
-**Difusión:** manda el enlace público al grupo de WhatsApp del torneo.
-Si quieres un QR para imprimir en la mesa de organización, pídemelo y te
-lo genero.
+1. **Inscripción:** pon un título, añade 18 parejas de prueba (basta un
+   nombre corto por jugador) y observa cómo el contador te dice el formato
+   (18 → grupos de 6+6+6) y el estimador la duración.
+2. **Sortear grupos** → te lleva a Resultados con las tandas montadas.
+3. Apunta 3–4 resultados en la vista POR TANDAS.
+4. **Guardar y publicar** → abre el enlace público desde un móvil (ideal:
+   de alguien sin cuenta de nada) y comprueba que se ve todo.
+5. **Clasificados → Generar cuadros** → apunta un cuarto de final.
+6. **Sorteo:** escribe un premio ("Televisión"), pulsa Sortear, mira la
+   animación, publica y comprueba que el ganador sale en la pestaña
+   Sorteos de la página pública.
+7. Para dejarlo limpio: en Inscripción, elimina las parejas de prueba
+   (confirmará que se borra todo) y **Guardar y publicar**.
 
 ---
 
-## FASE 7 · El día del torneo
+## FASE 4 · Inscripción real
 
-Tu flujo desde el PC:
+Según te confirmen parejas, ve añadiéndolas en Inscripción con el nombre de
+sus dos jugadores. Puedes publicar cuando quieras: la página pública
+mostrará "Inscripción en curso" con la lista de parejas — buen escaparate
+previo. **No pulses Sortear grupos hasta el cierre de inscripción.**
 
-1. Abre `admin.html` (favoritos). El estado debe decir "Conexión lista".
-2. Ve apuntando marcadores en **Resultados**. Consejo: la vista
-   **POR JORNADA** te enseña los 10 partidos de cada ronda organizados por
-   pista, tal y como se juegan.
-3. Pulsa **Guardar y publicar** cada vez que quieras actualizar la página
-   pública (p. ej. al cerrar cada jornada, o cada pocos partidos).
-   El aviso ámbar "Cambios sin publicar" te recuerda si tienes cosas
-   pendientes de subir.
-4. Al terminar los grupos: pestaña **Clasificados** → revisa los 8+8 →
-   **Generar cuadros** → **Guardar y publicar**.
-5. Apunta cuartos, semis y final en **Cuadros** (los ganadores pasan solos
-   de ronda) y publica. Cuando haya campeón, la página pública lo anuncia
-   con un banner dorado.
-6. En cualquier momento, **Copiar resumen** te da el texto con
-   clasificaciones y resultados listo para pegar en WhatsApp.
+Consejo: si cambias parejas después de sortear, el panel te avisará de que
+hay que rehacer el sorteo (y se borran los resultados). Es la red de
+seguridad para que nunca haya grupos incoherentes.
 
-**Red de seguridad:** todo lo que escribes se guarda también en tu
-navegador aunque se corte internet; cuando vuelva la conexión, pulsa
-Guardar y publicar y listo.
+---
+
+## FASE 5 · El día del torneo (guion)
+
+1. **Cierre de inscripción** → pestaña Inscripción → **Sortear grupos** →
+   **Guardar y publicar**. La gente ya ve su grupo y el horario por tandas
+   en el móvil. (¿No te gusta cómo ha quedado el reparto? Puedes volver a
+   sortear mientras no haya resultados.)
+2. **Fase de grupos:** vista POR TANDAS. Cada tanda te dice qué partido va
+   en qué pista. Apunta marcadores y publica cada pocos partidos.
+3. **Sorteos de premios cuando toque:** pestaña Sorteo → escribe el premio
+   ("Televisión", "Pala BÜRK"…) → **Sortear** → animación y ganador en
+   grande, con su premio → **Guardar y publicar** para que salga en la
+   página pública. Quien ya ha ganado no puede repetir; puedes hacer tantos
+   sorteos como premios tengáis. Si te equivocas, cada premio tiene una ✕
+   para anularlo.
+4. **Fin de grupos:** Clasificados → revisa los cruces → **Generar
+   cuadros** → publicar.
+5. **Cuadros:** apunta cuartos, semis y final; con menos de 16 parejas los
+   mejores de consolación tendrán "pase directo" automático. Al decidirse
+   la final, la página pública anuncia a los campeones con el banner dorado.
+6. En cualquier momento, **Copiar resumen** → WhatsApp.
+
+**Red de seguridad:** todo lo que escribes queda guardado en tu navegador
+aunque se corte internet; al volver la conexión, Guardar y publicar.
+
+---
+
+## Cómo funciona el formato dinámico (referencia)
+
+- Con P parejas se forman grupos de **5, 6 o 7** — así **todas las parejas
+  juegan mínimo 4 partidos**, como se anunció en la inscripción.
+- Round robin dentro de cada grupo. Clasificación por victorias; empates
+  dentro del grupo por enfrentamiento directo; comparación entre grupos de
+  distinto tamaño por % de victorias y diferencia media de puntos.
+- Los **8 mejores** van al cuadro principal y los **8 siguientes** a
+  consolación (si hay menos de 16 parejas, los mejores de consolación
+  tienen pase directo en cuartos).
+- El horario se organiza en **tandas**: rondas de partidos simultáneos en
+  todas las pistas, calculadas para que ninguna pareja juegue dos veces
+  seguidas sin descanso y ninguna pista se quede parada sin necesidad.
+
+Duración estimada (5 pistas · 15 min por tanda · 15 min entre fases) — la
+misma tabla que tienes en el panel, donde puedes ajustar los parámetros:
+
+| Parejas | Grupos    | Partidos | Duración estimada |
+|---------|-----------|----------|-------------------|
+| 15      | 5+5+5     | 43       | ~2 h 45 min       |
+| 18      | 6+6+6     | 59       | ~3 h 30 min       |
+| 20      | 5+5+5+5   | 54       | ~3 h 15 min       |
+| 21      | 6+5+5+5   | 59       | ~3 h 30 min       |
+| 23      | 6+6+6+5   | 69       | ~4 h              |
+| 25      | 5×5       | 64       | ~3 h 45 min       |
+
+Ojo al detalle: 18–19 o 23–24 parejas dan MÁS partidos que 20 o 25, porque
+los grupos de 6 y 7 crecen rápido en cruces. No incluye pausas para comida
+o entrega de premios.
 
 ---
 
 ## Problemas comunes
 
 - **"He publicado pero la página pública no cambia"** → espera 1–2 minutos
-  y recarga. GitHub Pages tarda un poco en desplegar cada cambio.
-- **"Error de permisos" al publicar** → el token está mal pegado, caducado,
-  o le falta el permiso Contents · Read and write. Crea uno nuevo (Fase 3)
-  y actualízalo en ⚙ Configuración.
-- **"No se encuentra el repositorio"** → revisa en ⚙ que el usuario y el
-  nombre del repositorio están escritos exactamente igual que en GitHub.
-- **He cambiado de PC / borrado el navegador** → vuelve a hacer la Fase 4
-  en el nuevo navegador (necesitarás el token; si no lo guardaste, crea otro).
-- **Quiero empezar de cero** → pestaña Parejas → "Reiniciar torneo" →
-  Guardar y publicar.
-- **"Cargar publicado"** → trae al panel la última versión publicada. Útil
-  si escribiste desde otro sitio o quieres descartar cambios locales.
+  y recarga (GitHub Pages tarda un poco en desplegar).
+- **"Error de permisos" al publicar** → token mal pegado, caducado o sin el
+  permiso Contents · Read and write. Crea uno nuevo (perfil → Settings →
+  Developer settings → Fine-grained tokens) y actualízalo en ⚙.
+- **"Los datos publicados son de la versión antigua"** al Cargar publicado
+  → normal justo tras actualizar: trabaja con el panel y publica; a partir
+  de ahí todo será versión nueva.
+- **He cambiado de PC / borrado el navegador** → vuelve a poner usuario,
+  repositorio y token en ⚙ Configuración.
+- **Quiero empezar de cero** → elimina las parejas en Inscripción (o carga
+  publicado si lo publicado estaba limpio) y Guardar y publicar.
 
 ---
 
