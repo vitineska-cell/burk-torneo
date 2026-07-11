@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>BÜRK · Torneo en directo</title>
+<style>
+html,body{margin:0;min-height:100%;background:#0A0A0B;color:#EDEDEF;font-family:Arial,sans-serif}
+.loading{display:flex;min-height:100vh;align-items:center;justify-content:center;padding:24px;text-align:center}
+</style>
+</head>
+<body>
+<div class="loading" id="loading">Cargando torneo BÜRK…</div>
+<script>
+(function(){
+  fetch("./index.html?embed="+Date.now(),{cache:"no-store"})
+    .then(function(response){
+      if(!response.ok)throw new Error("No se pudo cargar la página del torneo");
+      return response.text();
+    })
+    .then(function(html){
+      var responsiveOverride="<style>.wrap{max-width:1400px!important}</style>";
+      if(html.indexOf("</head>")===-1)throw new Error("Formato HTML no válido");
+      html=html.replace("</head>",responsiveOverride+"</head>");
+      document.open();
+      document.write(html);
+      document.close();
+    })
+    .catch(function(error){
+      var loading=document.getElementById("loading");
+      if(loading)loading.textContent="No se ha podido cargar el torneo. Actualiza la página para volver a intentarlo.";
+      console.error(error);
+    });
+})();
+</script>
+</body>
+</html>
