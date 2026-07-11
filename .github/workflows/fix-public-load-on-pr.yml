@@ -1,0 +1,47 @@
+name: Corregir carga pública en PR
+
+on:
+  pull_request:
+    branches:
+      - main
+    types: [opened, reopened, synchronize]
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+          fetch-depth: 0
+
+      - name: Corregir render inicial y validar
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('torneo.js')
+          s = p.read_text(encoding='utf-8')
+          old = '''    window.renderCuadros();
+  }
+
+  if (typeof module !== "undefined" && module.exports) {'''
+          new = '''    if (window.DATA) window.renderCuadros();
+  }
+
+  if (typeof module !== "undefined" && module.exports) {'''
+          if old not in s:
+              raise SystemExit('No se encontró el bloque esperado')
+          p.write_text(s.replace(old, new, 1), encoding='utf-8')
+          PY
+          node --check torneo.js
+          rm .github/workflows/fix-public-load-on-pr.yml
+          git config user.name "BÜRK Bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add torneo.js .github/workflows/fix-public-load-on-pr.yml
+          git commit -m "Evitar render antes de cargar datos"
+          git push origin HEAD:${{ github.head_ref }}
