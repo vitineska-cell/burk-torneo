@@ -1,7 +1,7 @@
 {
   "meta": {
     "title": "BÜRK · TORNEO NOCTURNO EN DIRECTO",
-    "updatedAt": "2026-07-11T17:34:57.044Z",
+    "updatedAt": "2026-07-11T17:37:29.278Z",
     "courts": 5
   },
   "pairs": [
@@ -397,6 +397,12 @@
     "scheduleCourts": 5
   },
   "raffle": {
-    "winners": []
+    "winners": [
+      {
+        "name": "Ff",
+        "prize": "TELE",
+        "at": "2026-07-11T17:35:33.200Z"
+      }
+    ]
   }
 }
