@@ -1,7 +1,7 @@
 {
   "meta": {
     "title": "BÜRK · TORNEO NOCTURNO EN DIRECTO",
-    "updatedAt": "2026-07-11T16:02:51.756Z",
+    "updatedAt": "2026-07-11T16:21:46.625Z",
     "courts": 5
   },
   "pairs": [
@@ -390,6 +390,11 @@
         "name": "Chema\tBravo Balmori",
         "prize": "pala legend",
         "at": "2026-07-11T15:54:23.467Z"
+      },
+      {
+        "name": "Jose Antonio\tJaramillo mendes",
+        "prize": "sesion fisioterapia",
+        "at": "2026-07-11T16:03:25.874Z"
       }
     ]
   }
