@@ -1,7 +1,7 @@
 {
   "meta": {
     "title": "BÜRK · TORNEO NOCTURNO EN DIRECTO",
-    "updatedAt": "2026-07-11T17:41:13.670Z",
+    "updatedAt": "2026-07-11T18:07:51.274Z",
     "courts": 5
   },
   "pairs": [
@@ -407,6 +407,11 @@
         "name": "ASGFagfs",
         "prize": "BARCO",
         "at": "2026-07-11T17:41:11.671Z"
+      },
+      {
+        "name": "gAGg",
+        "prize": "psicina",
+        "at": "2026-07-11T18:07:49.771Z"
       }
     ]
   }
