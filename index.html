@@ -74,8 +74,9 @@ main{padding-top:16px}
 .champ-card{border:1px solid;padding:12px;text-align:center;margin-top:4px}
 .champ-card .k{font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--mut2);margin-bottom:4px}
 .champ-card .n{font-family:'Big Shoulders Display',sans-serif;font-weight:900;font-size:20px;letter-spacing:.03em}
-.insc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:1px;background:var(--line2)}
-.insc-item{background:var(--panel);padding:10px 14px;font-size:13px;font-weight:600}
+.insc-grid{display:grid;grid-template-columns:1fr;background:var(--line2)}
+.insc-item{background:var(--panel);padding:10px 14px;font-size:13px;font-weight:600;border-top:1px solid var(--line2)}
+.insc-item:first-child{border-top:0}
 .insc-item .n{color:var(--mut2);font-weight:400;font-size:11px;margin-right:8px}
 .raffle-row{display:flex;align-items:center;gap:12px;padding:12px 14px;border-top:1px solid var(--line2)}
 .raffle-ico{font-size:20px;flex-shrink:0}
