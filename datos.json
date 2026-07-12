@@ -1,10 +1,86 @@
 {
   "meta": {
     "title": "BÜRK · TORNEO NOCTURNO EN DIRECTO",
-    "updatedAt": "2026-07-12T00:17:51.911Z",
+    "updatedAt": "2026-07-12T00:30:45.247Z",
     "courts": 5
   },
-  "pairs": [],
+  "pairs": [
+    {
+      "id": "pmrh1tar51",
+      "p1": "José Campoy",
+      "p2": "José Fernández"
+    },
+    {
+      "id": "pmrh1zuby2",
+      "p1": "Rafael Cecilio",
+      "p2": "Chema Bravo Balmori"
+    },
+    {
+      "id": "pmrh20mk33",
+      "p1": "Gorka Ochoa Llases",
+      "p2": "Aurelio Bautista González"
+    },
+    {
+      "id": "pmrh20vyk4",
+      "p1": "Rafael Godino García",
+      "p2": "Elena Sanz Liñeira"
+    },
+    {
+      "id": "pmrh2153b5",
+      "p1": "Javier Ramos Domínguez",
+      "p2": "José Luis Fernández Arévalo"
+    },
+    {
+      "id": "pmrh21ir16",
+      "p1": "Juan Manuel Cañas",
+      "p2": "Maché Hernández"
+    },
+    {
+      "id": "pmrh21tm37",
+      "p1": "Raúl Fernández Pulido",
+      "p2": "Óscar Fernández Pulido"
+    },
+    {
+      "id": "pmrh2251i8",
+      "p1": "José Luis Castañeda",
+      "p2": "Mariau Ayerra Díaz"
+    },
+    {
+      "id": "pmrh22eg09",
+      "p1": "Mario Playá Serra",
+      "p2": "Laudelino Quintero"
+    },
+    {
+      "id": "pmrh22n5w10",
+      "p1": "Javier Hidalgo Rodríguez",
+      "p2": "Javier Hidalgo Martín"
+    },
+    {
+      "id": "pmrh22xnu11",
+      "p1": "Victoria Alzina",
+      "p2": "Raúl Bravo"
+    },
+    {
+      "id": "pmrh235aq12",
+      "p1": "José Antonio Jaramillo Mendes",
+      "p2": "Marisol Juárez Roncero"
+    },
+    {
+      "id": "pmrh23e5813",
+      "p1": "Francisco Ramos Sánchez",
+      "p2": "Francisco Javier de Marcos del Pozo"
+    },
+    {
+      "id": "pmrh23ne414",
+      "p1": "Facundo López",
+      "p2": "Alex Salar"
+    },
+    {
+      "id": "pmrh23wfc15",
+      "p1": "Fernando Delgado Trompeta",
+      "p2": "¿?"
+    }
+  ],
   "groups": null,
   "results": {},
   "bracket": null,
