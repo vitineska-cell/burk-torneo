@@ -1,4 +1,4 @@
-# BÜRK · Torneo en directo — GUÍA v2
+# BÜRK · Torneo en directo — GUÍA v3
 
 Sistema completo de torneo Round Robin con **formato dinámico** (de 10 a 25
 parejas), resultados en directo, cuadros principal y de consolación, y
@@ -54,7 +54,9 @@ Cinco pestañas, en el orden natural del torneo:
   C…) con la clasificación en vivo.
 - **Clasificados** — los 8 del cuadro principal y los de consolación, con el
   criterio aplicado, y el botón **Generar cuadros**.
-- **Cuadros** — cuartos, semis y final editables; los ganadores avanzan solos.
+- **Cuadros** — cuartos, semis, final y partido por el 3.º/4.º puesto
+  editables; los ganadores y perdedores de semifinales avanzan solos al
+  partido correspondiente.
 - **Sorteo** — el sorteo de premios (ver Fase 5).
 
 Y arriba siempre: **Guardar y publicar** (sube los cambios a la página
@@ -113,9 +115,10 @@ seguridad para que nunca haya grupos incoherentes.
    para anularlo.
 4. **Fin de grupos:** Clasificados → revisa los cruces → **Generar
    cuadros** → publicar.
-5. **Cuadros:** apunta cuartos, semis y final; con menos de 16 parejas los
+5. **Cuadros:** apunta cuartos, semis, final y 3.º/4.º puesto; con menos de 16 parejas los
    mejores de consolación tendrán "pase directo" automático. Al decidirse
-   la final, la página pública anuncia a los campeones con el banner dorado.
+   las semifinales, sus perdedores aparecen automáticamente en el partido por
+   el 3.º/4.º puesto. La página pública muestra los campeones y el podio.
 6. En cualquier momento, **Copiar resumen** → WhatsApp.
 
 **Red de seguridad:** todo lo que escribes queda guardado en tu navegador
@@ -142,12 +145,12 @@ misma tabla que tienes en el panel, donde puedes ajustar los parámetros:
 
 | Parejas | Grupos    | Partidos | Duración estimada |
 |---------|-----------|----------|-------------------|
-| 15      | 5+5+5     | 43       | ~2 h 45 min       |
-| 18      | 6+6+6     | 59       | ~3 h 30 min       |
-| 20      | 5+5+5+5   | 54       | ~3 h 15 min       |
-| 21      | 6+5+5+5   | 59       | ~3 h 30 min       |
-| 23      | 6+6+6+5   | 69       | ~4 h              |
-| 25      | 5×5       | 64       | ~3 h 45 min       |
+| 15      | 5+5+5     | 45       | ~2 h 45 min       |
+| 18      | 6+6+6     | 61       | ~3 h 30 min       |
+| 20      | 5+5+5+5   | 56       | ~3 h 15 min       |
+| 21      | 6+5+5+5   | 61       | ~3 h 30 min       |
+| 23      | 6+6+6+5   | 71       | ~4 h              |
+| 25      | 5×5       | 66       | ~3 h 45 min       |
 
 Ojo al detalle: 18–19 o 23–24 parejas dan MÁS partidos que 20 o 25, porque
 los grupos de 6 y 7 crecen rápido en cruces. No incluye pausas para comida
