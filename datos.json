@@ -1,7 +1,7 @@
 {
   "meta": {
     "title": "BÜRK · TORNEO NOCTURNO EN DIRECTO",
-    "updatedAt": "2026-07-12T00:56:05.847Z",
+    "updatedAt": "2026-07-13T07:54:05.171Z",
     "courts": 5
   },
   "pairs": [
@@ -79,6 +79,11 @@
       "id": "pmrh23wfc15",
       "p1": "Fernando Delgado Trompeta",
       "p2": "¿?"
+    },
+    {
+      "id": "pmrixefcd1",
+      "p1": "Lesly Antonieta",
+      "p2": "Amalia Mirela"
     }
   ],
   "groups": null,
