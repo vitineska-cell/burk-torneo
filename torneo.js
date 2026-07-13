@@ -11,7 +11,7 @@ function defaultState() {
     pairs: [],              // [{id:"p1", p1:"Nombre", p2:"Nombre"}]
     groups: null,           // [[pairId,...], ...] tras el sorteo
     results: {},            // "g-r-m" -> {s1,s2}  (g = índice de grupo)
-    bracket: null,          // {main:{qf,sf,f}, cons:{qf,sf,f}}
+    bracket: null,          // {main:{qf,sf,f,third}, cons:{qf,sf,f,third}}
     raffle: { winners: [] } // [{name, prize, at}]
   };
 }
@@ -223,16 +223,34 @@ function seedBracket(seeds) {
   return qf;
 }
 
+function emptyBracketMatch() {
+  return { s1: "", s2: "", aId: null, bId: null };
+}
+
+function ensureBracketThirdPlace(bracket) {
+  if (!bracket) return false;
+  var changed = false;
+  ["main", "cons"].forEach(function (draw) {
+    var br = bracket[draw];
+    if (!br) return;
+    if (!Array.isArray(br.third) || !br.third[0]) {
+      br.third = [emptyBracketMatch()];
+      changed = true;
+    }
+  });
+  return changed;
+}
+
 function makeBracket(qual) {
-  var empty = function () { return { s1: "", s2: "", aId: null, bId: null }; };
   var slim = function (t) { return t ? { id: t.id, name: t.name, group: t.group, letter: t.letter } : null; };
   var mk = function (seeds) {
     return {
       qf: seedBracket(seeds).map(function (m) {
-        var e = empty(); e.a = slim(m.a); e.b = slim(m.b); return e;
+        var e = emptyBracketMatch(); e.a = slim(m.a); e.b = slim(m.b); return e;
       }),
-      sf: [empty(), empty()],
-      f: [empty()]
+      sf: [emptyBracketMatch(), emptyBracketMatch()],
+      f: [emptyBracketMatch()],
+      third: [emptyBracketMatch()]
     };
   };
   return { main: mk(qual.main), cons: mk(qual.seedsCons) };
@@ -250,12 +268,28 @@ function winnerOf(m, a, b) {
   return s1 > s2 ? a : b;
 }
 
+/* perdedor de un partido real; un pase directo no genera perdedor */
+function loserOf(m, a, b) {
+  if (!a || !b) return null;
+  var winner = winnerOf(m, a, b);
+  if (!winner) return null;
+  return winner.id === a.id ? b : a;
+}
+
 function bracketDerived(br) {
   var qfW = br.qf.map(function (m) { return winnerOf(m, m.a, m.b); });
   var sfPairs = [[qfW[0], qfW[1]], [qfW[2], qfW[3]]];
   var sfW = sfPairs.map(function (p, i) { return p[0] && p[1] ? winnerOf(br.sf[i], p[0], p[1]) : (p[0] && !p[1] ? p[0] : (!p[0] && p[1] ? p[1] : null)); });
+  var sfL = sfPairs.map(function (p, i) { return p[0] && p[1] ? loserOf(br.sf[i], p[0], p[1]) : null; });
   var champ = sfW[0] && sfW[1] ? winnerOf(br.f[0], sfW[0], sfW[1]) : null;
-  return { qfW: qfW, sfPairs: sfPairs, sfW: sfW, champ: champ };
+  var runnerUp = sfW[0] && sfW[1] ? loserOf(br.f[0], sfW[0], sfW[1]) : null;
+  var thirdMatch = br.third && br.third[0];
+  var thirdPlace = sfL[0] && sfL[1] ? winnerOf(thirdMatch, sfL[0], sfL[1]) : null;
+  var fourthPlace = sfL[0] && sfL[1] ? loserOf(thirdMatch, sfL[0], sfL[1]) : null;
+  return {
+    qfW: qfW, sfPairs: sfPairs, sfW: sfW, sfL: sfL,
+    champ: champ, runnerUp: runnerUp, thirdPlace: thirdPlace, fourthPlace: fourthPlace
+  };
 }
 
 /* ═══ PLANIFICADOR DE TANDAS ═══
@@ -336,7 +370,8 @@ function consRoundMatches(consN) {
   var r1 = Math.max(0, consN - 4);
   var sf = consN > 4 ? 2 : Math.max(0, consN - 2);
   var f = consN >= 2 ? 1 : 0;
-  return { r1: r1, sf: sf, f: f };
+  var third = sf === 2 ? 1 : 0;
+  return { r1: r1, sf: sf, f: f, third: third };
 }
 
 function estimateTournament(P, courts, slotMin, interMin) {
@@ -350,11 +385,11 @@ function estimateTournament(P, courts, slotMin, interMin) {
   var koWaves = [
     4 + cr.r1,  // cuartos (principal + consolación)
     2 + cr.sf,  // semifinales
-    1 + cr.f    // finales
+    2 + cr.f + cr.third // finales y partidos por 3.º/4.º puesto
   ];
   var koTandas = 0;
   koWaves.forEach(function (w) { koTandas += Math.ceil(w / courts); });
-  var koMatches = 7 + (consN - 1 > 0 ? consN - 1 : 0);
+  var koMatches = 8 + (consN - 1 > 0 ? consN - 1 : 0) + cr.third;
   var minutes = (tandas.length + koTandas) * slotMin + interMin;
   var minPerPair = Math.min.apply(null, fmt.sizes) - 1;
   var maxPerPair = Math.max.apply(null, fmt.sizes) - 1;
@@ -399,7 +434,9 @@ if (typeof module !== "undefined") module.exports = {
   computeFormat: computeFormat, genSchedule: genSchedule, scheduleFor: scheduleFor, shuffle: shuffle,
   drawGroups: drawGroups, isPlayed: isPlayed, groupMatchList: groupMatchList, playedCount: playedCount,
   groupStats: groupStats, crossRank: crossRank, computeQualification: computeQualification, zoneMap: zoneMap,
-  seedBracket: seedBracket, makeBracket: makeBracket, winnerOf: winnerOf, bracketDerived: bracketDerived,
+  seedBracket: seedBracket, emptyBracketMatch: emptyBracketMatch,
+  ensureBracketThirdPlace: ensureBracketThirdPlace, makeBracket: makeBracket,
+  winnerOf: winnerOf, loserOf: loserOf, bracketDerived: bracketDerived,
   buildTandas: buildTandas, estimateTournament: estimateTournament, fmtDuration: fmtDuration,
   escHtml: escHtml, fmtDiff: fmtDiff, rafflePool: rafflePool, consRoundMatches: consRoundMatches
 };
@@ -434,13 +471,16 @@ if (typeof module !== "undefined") module.exports = {
       var sf1 = !!(qp[2] || qp[3]);
       return sf0 && sf1;
     }
+    if (round === "third") {
+      return roundIsPlayable(br, "sf", 0) && roundIsPlayable(br, "sf", 1);
+    }
     return false;
   }
 
   function bracketScheduleRefs(bracket) {
     if (!bracket || !bracket.main || !bracket.cons) return [];
     var refs = [];
-    ["qf", "sf", "f"].forEach(function (round) {
+    ["qf", "sf", "f", "third"].forEach(function (round) {
       ["main", "cons"].forEach(function (draw) {
         var br = bracket[draw];
         (br[round] || []).forEach(function (match, idx) {
@@ -455,24 +495,37 @@ refs.push({ draw: draw, round: round, idx: idx, match: match });
   function ensureBracketSchedule(bracket, courtCount, reset) {
     if (!bracket) return false;
     var courts = Math.max(1, Number(courtCount) || 1);
-    var changed = false;
+    var changed = ensureBracketThirdPlace(bracket);
     var refs = bracketScheduleRefs(bracket);
-    var stages = ["qf", "sf", "f"];
+    var stages = [["qf"], ["sf"], ["f", "third"]];
     var nextSlot = 1;
+    var occupied = {};
 
-    stages.forEach(function (round) {
-      var stage = refs.filter(function (r) { return r.round === round; });
+    if (!reset) {
+      refs.forEach(function (ref) {
+        if (validPositiveInt(ref.match.slot) && validPositiveInt(ref.match.court)) {
+          occupied[Number(ref.match.slot) + ":" + Number(ref.match.court)] = true;
+        }
+      });
+    }
+
+    stages.forEach(function (rounds) {
+      var stage = refs.filter(function (r) { return rounds.indexOf(r.round) !== -1; });
       stage.forEach(function (ref, i) {
-        var slot = nextSlot + Math.floor(i / courts);
-        var court = i % courts + 1;
-        if (reset || !validPositiveInt(ref.match.slot)) {
-if (Number(ref.match.slot) !== slot) changed = true;
-ref.match.slot = slot;
+        var hasAssignment = validPositiveInt(ref.match.slot) && validPositiveInt(ref.match.court);
+        if (!reset && hasAssignment) return;
+        var candidate = reset ? i : 0;
+        var slot = nextSlot + Math.floor(candidate / courts);
+        var court = candidate % courts + 1;
+        while (occupied[slot + ":" + court]) {
+          candidate++;
+          slot = nextSlot + Math.floor(candidate / courts);
+          court = candidate % courts + 1;
         }
-        if (reset || !validPositiveInt(ref.match.court)) {
-if (Number(ref.match.court) !== court) changed = true;
-ref.match.court = court;
-        }
+        if (Number(ref.match.slot) !== slot || Number(ref.match.court) !== court) changed = true;
+        ref.match.slot = slot;
+        ref.match.court = court;
+        occupied[Number(ref.match.slot) + ":" + Number(ref.match.court)] = true;
       });
       if (stage.length) nextSlot += Math.ceil(stage.length / courts);
     });
@@ -497,7 +550,10 @@ ref.match.court = court;
   }
 
   function roundTitle(round) {
-    return round === "qf" ? "Cuartos" : round === "sf" ? "Semifinal" : "Final";
+    if (round === "qf") return "Cuartos";
+    if (round === "sf") return "Semifinal";
+    if (round === "third") return "3.º/4.º puesto";
+    return "Final";
   }
 
   function drawTitle(draw) {
@@ -505,13 +561,17 @@ ref.match.court = court;
   }
 
   function matchCode(ref) {
-    return (ref.round === "qf" ? "QF" : ref.round === "sf" ? "SF" : "F") + (ref.idx + 1);
+    if (ref.round === "qf") return "QF" + (ref.idx + 1);
+    if (ref.round === "sf") return "SF" + (ref.idx + 1);
+    if (ref.round === "third") return "3.º/4.º";
+    return "FINAL";
   }
 
   function participantsFor(br, round, idx) {
     if (round === "qf") return [br.qf[idx].a, br.qf[idx].b];
     var d = bracketDerived(br);
     if (round === "sf") return d.sfPairs[idx] || [null, null];
+    if (round === "third") return [d.sfL[0], d.sfL[1]];
     return [d.sfW[0], d.sfW[1]];
   }
 
@@ -520,6 +580,7 @@ ref.match.court = court;
       return "Ganador QF" + (ref.idx * 2 + 1) + " / Ganador QF" + (ref.idx * 2 + 2);
     }
     if (ref.round === "f") return "Ganador SF1 / Ganador SF2";
+    if (ref.round === "third") return "Perdedor SF1 / Perdedor SF2";
     return "Por definir";
   }
 
@@ -637,7 +698,7 @@ ref.match.court = court;
       if (!panel) return;
       var nodes = panel.querySelectorAll(".bk-match");
       var ordered = [];
-      ["qf", "sf", "f"].forEach(function (round) {
+      ["qf", "sf", "f", "third"].forEach(function (round) {
         (bracket[draw][round] || []).forEach(function (match, idx) {
 ordered.push({ draw: draw, round: round, idx: idx, match: match });
         });
@@ -698,6 +759,7 @@ select.addEventListener("change", function () {
     var original = window.renderCuadros;
     if (typeof original !== "function") return;
     window.renderCuadros = function () {
+      if (!DATA) return;
       if (DATA && DATA.bracket) ensureBracketSchedule(DATA.bracket, courts(), false);
       original();
       var container = document.getElementById("v-cuadros");
@@ -705,7 +767,7 @@ select.addEventListener("change", function () {
       decorateMatches(container, DATA.bracket, false, courts(), function () {});
       container.insertBefore(buildPlanPanel(DATA.bracket, courts(), false, function () {}), container.firstChild);
     };
-    window.renderCuadros();
+    if (window.DATA) window.renderCuadros();
   }
 
   if (typeof module !== "undefined" && module.exports) {
@@ -721,4 +783,3 @@ select.addEventListener("change", function () {
     else installPublicEnhancement();
   });
 }());
-
