@@ -1,7 +1,7 @@
 {
   "meta": {
     "title": "BÜRK · TORNEO NOCTURNO EN DIRECTO",
-    "updatedAt": "2026-07-14T18:38:34.213Z",
+    "updatedAt": "2026-07-14T21:44:04.450Z",
     "courts": 5
   },
   "pairs": [
@@ -114,6 +114,16 @@
       "id": "pmrkzr1x96",
       "p1": "Eduardo González del Val",
       "p2": "Eduardo González Fermosel"
+    },
+    {
+      "id": "pmrl6ftfy8",
+      "p1": "Diego Cimadevilla Fernandez",
+      "p2": "Natalia Molina Durán"
+    },
+    {
+      "id": "pmrl6gokc9",
+      "p1": "Mar Molina Durán ",
+      "p2": "Ramón Peña"
     }
   ],
   "groups": null,
