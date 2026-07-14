@@ -1,7 +1,7 @@
 {
   "meta": {
     "title": "BÜRK · TORNEO NOCTURNO EN DIRECTO",
-    "updatedAt": "2026-07-13T07:54:05.171Z",
+    "updatedAt": "2026-07-14T18:36:55.550Z",
     "courts": 5
   },
   "pairs": [
@@ -78,12 +78,42 @@
     {
       "id": "pmrh23wfc15",
       "p1": "Fernando Delgado Trompeta",
-      "p2": "¿?"
+      "p2": "Pedro Rodriguez"
     },
     {
       "id": "pmrixefcd1",
       "p1": "Lesly Antonieta",
       "p2": "Amalia Mirela"
+    },
+    {
+      "id": "pmrkzms9o1",
+      "p1": "Cristina Sanz",
+      "p2": "Ines Perez"
+    },
+    {
+      "id": "pmrkzng302",
+      "p1": "Jose Alberto Martinez Moreno",
+      "p2": "Victor Alvarez Iglesia"
+    },
+    {
+      "id": "pmrkzny9m3",
+      "p1": "Guillermo Hernando Garcia",
+      "p2": "Hugo Granados Jiménez"
+    },
+    {
+      "id": "pmrkzogow4",
+      "p1": "Daniel Hernando Gómez",
+      "p2": "José Manuel Granados Sánchez"
+    },
+    {
+      "id": "pmrkzozxl5",
+      "p1": "Marina\tHernando García",
+      "p2": "Gema García Rodríguez "
+    },
+    {
+      "id": "pmrkzr1x96",
+      "p1": "Eduardo González del Val",
+      "p2": "Eduardo González Fermosel"
     }
   ],
   "groups": null,
