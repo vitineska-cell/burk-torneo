@@ -1,7 +1,7 @@
 {
   "meta": {
     "title": "BÜRK · TORNEO NOCTURNO EN DIRECTO",
-    "updatedAt": "2026-07-14T21:44:08.521Z",
+    "updatedAt": "2026-07-15T06:22:07.777Z",
     "courts": 5
   },
   "pairs": [
@@ -124,9 +124,50 @@
       "id": "pmrl6gokc9",
       "p1": "Mar Molina Durán ",
       "p2": "Ramón Peña"
+    },
+    {
+      "id": "pmrloxugr10",
+      "p1": "Bárbara Molina Durán ",
+      "p2": "Jesús Moreno Aguilar "
     }
   ],
-  "groups": null,
+  "groups": [
+    [
+      "pmrh21tm37",
+      "pmrh23wfc15",
+      "pmrh23ne414",
+      "pmrkzms9o1",
+      "pmrkzogow4"
+    ],
+    [
+      "pmrkzng302",
+      "pmrh21ir16",
+      "pmrkzozxl5",
+      "pmrh23e5813",
+      "pmrkzny9m3"
+    ],
+    [
+      "pmrl6ftfy8",
+      "pmrkzr1x96",
+      "pmrixefcd1",
+      "pmrh22xnu11",
+      "pmrh2251i8"
+    ],
+    [
+      "pmrh20vyk4",
+      "pmrloxugr10",
+      "pmrh1tar51",
+      "pmrh235aq12",
+      "pmrh22eg09"
+    ],
+    [
+      "pmrh22n5w10",
+      "pmrh20mk33",
+      "pmrh2153b5",
+      "pmrl6gokc9",
+      "pmrh1zuby2"
+    ]
+  ],
   "results": {},
   "bracket": null,
   "raffle": {
