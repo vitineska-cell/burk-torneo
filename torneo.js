@@ -4,9 +4,13 @@
    ═══════════════════════════════════════════════════════ */
 
 var GROUP_LETTERS = "ABCDEFGH".split("");
+var SCORE_SCHEMA_VERSION = 3;
+var SINGLE_SET_15 = { bestOf: 1, targets: [15], code: "single-15" };
+var BEST_OF_3_15_15_11 = { bestOf: 3, targets: [15, 15, 11], code: "best-of-3" };
 
 function defaultState() {
   return {
+    schemaVersion: SCORE_SCHEMA_VERSION,
     meta: { title: "BÜRK · TORNEO EN DIRECTO", updatedAt: null },
     pairs: [],              // [{id:"p1", p1:"Nombre", p2:"Nombre"}]
     groups: null,           // [[pairId,...], ...] tras el sorteo
@@ -14,6 +18,182 @@ function defaultState() {
     bracket: null,          // {main:{qf,sf,f,third}, cons:{qf,sf,f,third}}
     raffle: { winners: [] } // [{name, prize, at}]
   };
+}
+
+function matchFormat(draw, round) {
+  if (draw === "main" && (round === "sf" || round === "f" || round === "third")) {
+    return BEST_OF_3_15_15_11;
+  }
+  return SINGLE_SET_15;
+}
+
+function formatRuleText(format) {
+  return format.bestOf === 3
+    ? "Mejor de 3 · sets 1 y 2 a 15 · tercer set a 11 · diferencia de 2"
+    : "1 set a 15 · diferencia de 2";
+}
+
+function emptyScoreSet() {
+  return { s1: "", s2: "" };
+}
+
+function scoreText(value) {
+  return value == null ? "" : String(value).trim();
+}
+
+function scoreValueIsValid(value) {
+  return value === "" || (/^\d+$/.test(value) && Number.isSafeInteger(Number(value)));
+}
+
+function setScoreStatus(set, target) {
+  var s1 = scoreText(set && set.s1), s2 = scoreText(set && set.s2);
+  var has1 = s1 !== "", has2 = s2 !== "";
+  if (!scoreValueIsValid(s1) || !scoreValueIsValid(s2)) {
+    return { valid: false, complete: false, winner: 0, message: "El marcador solo admite números enteros iguales o mayores que cero." };
+  }
+  if (!has1 || !has2) return { valid: true, complete: false, winner: 0, message: "" };
+  var n1 = Number(s1), n2 = Number(s2);
+  if (!Number.isSafeInteger(n1) || !Number.isSafeInteger(n2)) {
+    return { valid: false, complete: false, winner: 0, message: "El marcador introducido es demasiado grande." };
+  }
+  if (n1 === n2) {
+    return { valid: false, complete: false, winner: 0, message: "Un set no puede terminar empatado." };
+  }
+  var winner = n1 > n2 ? 1 : 2;
+  var high = Math.max(n1, n2), low = Math.min(n1, n2), diff = high - low;
+  if (high < target) {
+    return { valid: false, complete: false, winner: 0, message: "El ganador debe alcanzar al menos " + target + " puntos." };
+  }
+  if (diff < 2) {
+    return { valid: false, complete: false, winner: 0, message: "El set debe ganarse con 2 puntos de diferencia." };
+  }
+  if (high > target && diff !== 2) {
+    return { valid: false, complete: false, winner: 0, message: "Después del empate previo al punto objetivo, el set debe terminar con exactamente 2 puntos de diferencia." };
+  }
+  return { valid: true, complete: true, winner: winner, message: "" };
+}
+
+function normalizedMatchSets(match, format) {
+  var source = match && Array.isArray(match.sets) ? match.sets : null;
+  if (!source) source = [{ s1: match && match.s1, s2: match && match.s2 }];
+  var sets = [];
+  for (var i = 0; i < format.targets.length; i++) {
+    var set = source[i];
+    if (Array.isArray(set)) set = { s1: set[0], s2: set[1] };
+    sets.push({ s1: scoreText(set && set.s1), s2: scoreText(set && set.s2) });
+  }
+  return sets;
+}
+
+function scoreSetHasValue(set) {
+  return scoreText(set && set.s1) !== "" || scoreText(set && set.s2) !== "";
+}
+
+function matchScoreStatus(match, format) {
+  format = format || SINGLE_SET_15;
+  var sets = normalizedMatchSets(match || {}, format);
+  var wins = [0, 0];
+  for (var i = 0; i < sets.length; i++) {
+    var status = setScoreStatus(sets[i], format.targets[i]);
+    if (!status.valid) {
+      return { valid: false, complete: false, winner: 0, sets: sets, setIndex: i, message: "Set " + (i + 1) + ": " + status.message };
+    }
+    if (!status.complete) {
+      for (var later = i + 1; later < sets.length; later++) {
+        if (scoreSetHasValue(sets[later])) {
+          return { valid: false, complete: false, winner: 0, sets: sets, setIndex: later, message: "Completa los sets en orden." };
+        }
+      }
+      return { valid: true, complete: false, winner: 0, sets: sets, setIndex: i, message: "" };
+    }
+    wins[status.winner - 1]++;
+    if (format.bestOf === 1) {
+      return { valid: true, complete: true, winner: status.winner, sets: sets, wins: wins, message: "" };
+    }
+    if (wins[0] === 2 || wins[1] === 2) {
+      for (var extra = i + 1; extra < sets.length; extra++) {
+        if (scoreSetHasValue(sets[extra])) {
+          return { valid: false, complete: false, winner: 0, sets: sets, setIndex: extra, message: "El tercer set no debe jugarse si el partido termina 2-0." };
+        }
+      }
+      return { valid: true, complete: true, winner: wins[0] === 2 ? 1 : 2, sets: sets, wins: wins, message: "" };
+    }
+  }
+  return { valid: true, complete: false, winner: 0, sets: sets, wins: wins, message: "" };
+}
+
+function scoreSetIsEnabled(match, format, setIndex) {
+  if (setIndex === 0) return true;
+  var sets = normalizedMatchSets(match || {}, format);
+  var first = setScoreStatus(sets[0], format.targets[0]);
+  if (!first.valid || !first.complete) return false;
+  if (setIndex === 1) return true;
+  var second = setScoreStatus(sets[1], format.targets[1]);
+  return second.valid && second.complete && first.winner !== second.winner;
+}
+
+function pruneUnusedSets(match, format) {
+  if (format.bestOf !== 3) return;
+  var sets = normalizedMatchSets(match, format);
+  var first = setScoreStatus(sets[0], format.targets[0]);
+  var second = setScoreStatus(sets[1], format.targets[1]);
+  if (first.valid && first.complete && second.valid && second.complete && first.winner === second.winner) {
+    sets[2] = emptyScoreSet();
+  }
+  match.sets = sets;
+}
+
+function emptyBracketMatch(format) {
+  format = format || SINGLE_SET_15;
+  return {
+    sets: format.targets.map(function () { return emptyScoreSet(); }),
+    aId: null,
+    bId: null
+  };
+}
+
+function migrateBracketMatch(match, format) {
+  if (!match) return false;
+  var before = JSON.stringify(match);
+  match.sets = normalizedMatchSets(match, format);
+  delete match.s1;
+  delete match.s2;
+  pruneUnusedSets(match, format);
+  return JSON.stringify(match) !== before;
+}
+
+function migrateTournamentState(state) {
+  if (!state || !Array.isArray(state.pairs)) return false;
+  var changed = false;
+  if (state.schemaVersion !== SCORE_SCHEMA_VERSION) {
+    state.schemaVersion = SCORE_SCHEMA_VERSION;
+    changed = true;
+  }
+  if (!state.results || typeof state.results !== "object") {
+    state.results = {};
+    changed = true;
+  }
+  Object.keys(state.results).forEach(function (key) {
+    var result = state.results[key] || {};
+    var normalized = { s1: scoreText(result.s1), s2: scoreText(result.s2) };
+    if (JSON.stringify(result) !== JSON.stringify(normalized)) {
+      state.results[key] = normalized;
+      changed = true;
+    }
+  });
+  if (state.bracket) {
+    changed = ensureBracketThirdPlace(state.bracket) || changed;
+    ["main", "cons"].forEach(function (draw) {
+      var bracket = state.bracket[draw];
+      if (!bracket) return;
+      ["qf", "sf", "f", "third"].forEach(function (round) {
+        (bracket[round] || []).forEach(function (match) {
+          changed = migrateBracketMatch(match, matchFormat(draw, round)) || changed;
+        });
+      });
+    });
+  }
+  return changed;
 }
 
 function pairName(p) {
@@ -93,9 +273,8 @@ function drawGroups(state, rnd) {
 
 /* ── resultados ── */
 function isPlayed(res) {
-  if (!res || res.s1 === "" || res.s2 === "" || res.s1 == null || res.s2 == null) return false;
-  var s1 = Number(res.s1), s2 = Number(res.s2);
-  return !isNaN(s1) && !isNaN(s2) && s1 !== s2;
+  var status = setScoreStatus(res || {}, 15);
+  return status.valid && status.complete;
 }
 
 function groupMatchList(state) {
@@ -116,6 +295,11 @@ function playedCount(state) {
   var n = 0;
   groupMatchList(state).forEach(function (mm) { if (isPlayed(state.results[mm.key])) n++; });
   return n;
+}
+
+function groupStageComplete(state) {
+  var matches = groupMatchList(state);
+  return matches.length > 0 && playedCount(state) === matches.length;
 }
 
 /* ── clasificación de un grupo (victorias → h2h → dif → PF) ── */
@@ -223,10 +407,6 @@ function seedBracket(seeds) {
   return qf;
 }
 
-function emptyBracketMatch() {
-  return { s1: "", s2: "", aId: null, bId: null };
-}
-
 function ensureBracketThirdPlace(bracket) {
   if (!bracket) return false;
   var changed = false;
@@ -234,7 +414,7 @@ function ensureBracketThirdPlace(bracket) {
     var br = bracket[draw];
     if (!br) return;
     if (!Array.isArray(br.third) || !br.third[0]) {
-      br.third = [emptyBracketMatch()];
+      br.third = [emptyBracketMatch(matchFormat(draw, "third"))];
       changed = true;
     }
   });
@@ -243,53 +423,62 @@ function ensureBracketThirdPlace(bracket) {
 
 function makeBracket(qual) {
   var slim = function (t) { return t ? { id: t.id, name: t.name, group: t.group, letter: t.letter } : null; };
-  var mk = function (seeds) {
+  var mk = function (draw, seeds) {
     return {
       qf: seedBracket(seeds).map(function (m) {
-        var e = emptyBracketMatch(); e.a = slim(m.a); e.b = slim(m.b); return e;
+        var e = emptyBracketMatch(matchFormat(draw, "qf")); e.a = slim(m.a); e.b = slim(m.b); return e;
       }),
-      sf: [emptyBracketMatch(), emptyBracketMatch()],
-      f: [emptyBracketMatch()],
-      third: [emptyBracketMatch()]
+      sf: [emptyBracketMatch(matchFormat(draw, "sf")), emptyBracketMatch(matchFormat(draw, "sf"))],
+      f: [emptyBracketMatch(matchFormat(draw, "f"))],
+      third: [emptyBracketMatch(matchFormat(draw, "third"))]
     };
   };
-  return { main: mk(qual.main), cons: mk(qual.seedsCons) };
+  return { main: mk("main", qual.main), cons: mk("cons", qual.seedsCons) };
 }
 
 /* ganador de un partido de cuadro; bye = pasa el presente */
-function winnerOf(m, a, b) {
+function winnerOf(m, a, b, format) {
   if (a && !b) return a;
   if (b && !a) return b;
   if (!a || !b) return null;
-  if (!m || m.s1 === "" || m.s2 === "" || m.s1 == null || m.s2 == null) return null;
+  if (!m) return null;
   if (m.aId !== a.id || m.bId !== b.id) return null; // resultado obsoleto
-  var s1 = Number(m.s1), s2 = Number(m.s2);
-  if (isNaN(s1) || isNaN(s2) || s1 === s2) return null;
-  return s1 > s2 ? a : b;
+  var status = matchScoreStatus(m, format || SINGLE_SET_15);
+  if (!status.valid || !status.complete) return null;
+  return status.winner === 1 ? a : b;
 }
 
 /* perdedor de un partido real; un pase directo no genera perdedor */
-function loserOf(m, a, b) {
+function loserOf(m, a, b, format) {
   if (!a || !b) return null;
-  var winner = winnerOf(m, a, b);
+  var winner = winnerOf(m, a, b, format);
   if (!winner) return null;
   return winner.id === a.id ? b : a;
 }
 
-function bracketDerived(br) {
-  var qfW = br.qf.map(function (m) { return winnerOf(m, m.a, m.b); });
+function bracketDerived(br, draw) {
+  draw = draw || "main";
+  var qfFormat = matchFormat(draw, "qf"), sfFormat = matchFormat(draw, "sf");
+  var finalFormat = matchFormat(draw, "f"), thirdFormat = matchFormat(draw, "third");
+  var qfW = br.qf.map(function (m) { return winnerOf(m, m.a, m.b, qfFormat); });
   var sfPairs = [[qfW[0], qfW[1]], [qfW[2], qfW[3]]];
-  var sfW = sfPairs.map(function (p, i) { return p[0] && p[1] ? winnerOf(br.sf[i], p[0], p[1]) : (p[0] && !p[1] ? p[0] : (!p[0] && p[1] ? p[1] : null)); });
-  var sfL = sfPairs.map(function (p, i) { return p[0] && p[1] ? loserOf(br.sf[i], p[0], p[1]) : null; });
-  var champ = sfW[0] && sfW[1] ? winnerOf(br.f[0], sfW[0], sfW[1]) : null;
-  var runnerUp = sfW[0] && sfW[1] ? loserOf(br.f[0], sfW[0], sfW[1]) : null;
+  var sfW = sfPairs.map(function (p, i) { return p[0] && p[1] ? winnerOf(br.sf[i], p[0], p[1], sfFormat) : (p[0] && !p[1] ? p[0] : (!p[0] && p[1] ? p[1] : null)); });
+  var sfL = sfPairs.map(function (p, i) { return p[0] && p[1] ? loserOf(br.sf[i], p[0], p[1], sfFormat) : null; });
+  var champ = sfW[0] && sfW[1] ? winnerOf(br.f[0], sfW[0], sfW[1], finalFormat) : null;
+  var runnerUp = sfW[0] && sfW[1] ? loserOf(br.f[0], sfW[0], sfW[1], finalFormat) : null;
   var thirdMatch = br.third && br.third[0];
-  var thirdPlace = sfL[0] && sfL[1] ? winnerOf(thirdMatch, sfL[0], sfL[1]) : null;
-  var fourthPlace = sfL[0] && sfL[1] ? loserOf(thirdMatch, sfL[0], sfL[1]) : null;
+  var thirdPlace = sfL[0] && sfL[1] ? winnerOf(thirdMatch, sfL[0], sfL[1], thirdFormat) : null;
+  var fourthPlace = sfL[0] && sfL[1] ? loserOf(thirdMatch, sfL[0], sfL[1], thirdFormat) : null;
   return {
     qfW: qfW, sfPairs: sfPairs, sfW: sfW, sfL: sfL,
     champ: champ, runnerUp: runnerUp, thirdPlace: thirdPlace, fourthPlace: fourthPlace
   };
+}
+
+function formatMatchScore(match, format) {
+  var status = matchScoreStatus(match || {}, format || SINGLE_SET_15);
+  var used = status.sets.filter(function (set) { return scoreSetHasValue(set); });
+  return used.map(function (set) { return scoreText(set.s1) + "-" + scoreText(set.s2); }).join(" · ");
 }
 
 /* ═══ PLANIFICADOR DE TANDAS ═══
@@ -374,6 +563,17 @@ function consRoundMatches(consN) {
   return { r1: r1, sf: sf, f: f, third: third };
 }
 
+function stageDurationUnits(durations, courts) {
+  var loads = [];
+  for (var i = 0; i < Math.max(1, Number(courts) || 1); i++) loads.push(0);
+  durations.slice().sort(function (a, b) { return b - a; }).forEach(function (duration) {
+    var lightest = 0;
+    for (var c = 1; c < loads.length; c++) if (loads[c] < loads[lightest]) lightest = c;
+    loads[lightest] += duration;
+  });
+  return Math.max.apply(null, loads);
+}
+
 function estimateTournament(P, courts, slotMin, interMin) {
   var fmt = computeFormat(P);
   if (!fmt) return null;
@@ -382,21 +582,25 @@ function estimateTournament(P, courts, slotMin, interMin) {
   fmt.sizes.forEach(function (n) { groupMatches += n * (n - 1) / 2; });
   var consN = Math.min(8, P - 8);
   var cr = consRoundMatches(consN);
-  var koWaves = [
-    4 + cr.r1,  // cuartos (principal + consolación)
-    2 + cr.sf,  // semifinales
-    2 + cr.f + cr.third // finales y partidos por 3.º/4.º puesto
-  ];
+  var koWaves = [4 + cr.r1, 2 + cr.sf, 2 + cr.f + cr.third];
   var koTandas = 0;
   koWaves.forEach(function (w) { koTandas += Math.ceil(w / courts); });
+  var qfDurations = [];
+  for (var q = 0; q < 4 + cr.r1; q++) qfDurations.push(1);
+  var sfDurations = [3, 3];
+  for (var s = 0; s < cr.sf; s++) sfDurations.push(1);
+  var podiumDurations = [3, 3]; // final y 3.º/4.º de Oro
+  for (var f = 0; f < cr.f + cr.third; f++) podiumDurations.push(1);
+  var koSlotUnits = stageDurationUnits(qfDurations, courts) +
+    stageDurationUnits(sfDurations, courts) + stageDurationUnits(podiumDurations, courts);
   var koMatches = 8 + (consN - 1 > 0 ? consN - 1 : 0) + cr.third;
-  var minutes = (tandas.length + koTandas) * slotMin + interMin;
+  var minutes = (tandas.length + koSlotUnits) * slotMin + interMin;
   var minPerPair = Math.min.apply(null, fmt.sizes) - 1;
   var maxPerPair = Math.max.apply(null, fmt.sizes) - 1;
   return {
     P: P, sizes: fmt.sizes, groupMatches: groupMatches, koMatches: koMatches,
     totalMatches: groupMatches + koMatches,
-    groupTandas: tandas.length, koTandas: koTandas,
+    groupTandas: tandas.length, koTandas: koTandas, koSlotUnits: koSlotUnits,
     minutes: minutes, minPerPair: minPerPair, maxPerPair: maxPerPair
   };
 }
@@ -430,15 +634,25 @@ function rafflePool(state) {
 
 /* export para pruebas en node */
 if (typeof module !== "undefined") module.exports = {
-  GROUP_LETTERS: GROUP_LETTERS, defaultState: defaultState, pairName: pairName, pairById: pairById,
+  GROUP_LETTERS: GROUP_LETTERS, SCORE_SCHEMA_VERSION: SCORE_SCHEMA_VERSION,
+  SINGLE_SET_15: SINGLE_SET_15, BEST_OF_3_15_15_11: BEST_OF_3_15_15_11,
+  defaultState: defaultState, pairName: pairName, pairById: pairById,
+  matchFormat: matchFormat, formatRuleText: formatRuleText, emptyScoreSet: emptyScoreSet,
+  scoreValueIsValid: scoreValueIsValid,
+  setScoreStatus: setScoreStatus, matchScoreStatus: matchScoreStatus,
+  scoreSetIsEnabled: scoreSetIsEnabled, pruneUnusedSets: pruneUnusedSets,
+  normalizedMatchSets: normalizedMatchSets, migrateBracketMatch: migrateBracketMatch,
+  migrateTournamentState: migrateTournamentState, formatMatchScore: formatMatchScore,
   computeFormat: computeFormat, genSchedule: genSchedule, scheduleFor: scheduleFor, shuffle: shuffle,
   drawGroups: drawGroups, isPlayed: isPlayed, groupMatchList: groupMatchList, playedCount: playedCount,
+  groupStageComplete: groupStageComplete,
   groupStats: groupStats, crossRank: crossRank, computeQualification: computeQualification, zoneMap: zoneMap,
   seedBracket: seedBracket, emptyBracketMatch: emptyBracketMatch,
   ensureBracketThirdPlace: ensureBracketThirdPlace, makeBracket: makeBracket,
   winnerOf: winnerOf, loserOf: loserOf, bracketDerived: bracketDerived,
   buildTandas: buildTandas, estimateTournament: estimateTournament, fmtDuration: fmtDuration,
-  escHtml: escHtml, fmtDiff: fmtDiff, rafflePool: rafflePool, consRoundMatches: consRoundMatches
+  escHtml: escHtml, fmtDiff: fmtDiff, rafflePool: rafflePool, consRoundMatches: consRoundMatches,
+  stageDurationUnits: stageDurationUnits
 };
 
 /* ═══════════════════════════════════════════════════════
@@ -557,7 +771,7 @@ refs.push({ draw: draw, round: round, idx: idx, match: match });
   }
 
   function drawTitle(draw) {
-    return draw === "main" ? "principal" : "consolación";
+    return draw === "main" ? "Oro" : "consolación";
   }
 
   function matchCode(ref) {
@@ -567,9 +781,9 @@ refs.push({ draw: draw, round: round, idx: idx, match: match });
     return "FINAL";
   }
 
-  function participantsFor(br, round, idx) {
+  function participantsFor(br, draw, round, idx) {
     if (round === "qf") return [br.qf[idx].a, br.qf[idx].b];
-    var d = bracketDerived(br);
+    var d = bracketDerived(br, draw);
     if (round === "sf") return d.sfPairs[idx] || [null, null];
     if (round === "third") return [d.sfL[0], d.sfL[1]];
     return [d.sfW[0], d.sfW[1]];
@@ -585,7 +799,7 @@ refs.push({ draw: draw, round: round, idx: idx, match: match });
   }
 
   function matchupText(bracket, ref) {
-    var p = participantsFor(bracket[ref.draw], ref.round, ref.idx);
+    var p = participantsFor(bracket[ref.draw], ref.draw, ref.round, ref.idx);
     if (p[0] && p[1]) return p[0].name + " — " + p[1].name;
     if (p[0] || p[1]) return (p[0] || p[1]).name + " — Por definir";
     return fallbackParticipants(ref);
@@ -684,7 +898,7 @@ refs.push({ draw: draw, round: round, idx: idx, match: match });
       var head = panels[i].querySelector(".panel-head");
       if (!head) continue;
       var text = head.textContent.toLowerCase();
-      if (draw === "main" && text.indexOf("cuadro principal") !== -1) return panels[i];
+      if (draw === "main" && (text.indexOf("grupo oro") !== -1 || text.indexOf("cuadro principal") !== -1)) return panels[i];
       if (draw === "cons" && text.indexOf("consolación") !== -1) return panels[i];
     }
     return null;
