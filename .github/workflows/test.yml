@@ -1,0 +1,41 @@
+name: Validar torneo
+
+on:
+  pull_request:
+    paths:
+      - "torneo.js"
+      - "admin.html"
+      - "index.html"
+      - "embed.html"
+      - "tests/**"
+      - "package.json"
+      - "package-lock.json"
+      - ".github/workflows/test.yml"
+  push:
+    branches: [main]
+    paths:
+      - "torneo.js"
+      - "admin.html"
+      - "index.html"
+      - "embed.html"
+      - "tests/**"
+      - "package.json"
+      - "package-lock.json"
+      - ".github/workflows/test.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - name: Instalar dependencias de pruebas
+        run: npm ci
+      - name: Ejecutar todas las pruebas
+        run: npm test

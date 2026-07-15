@@ -61,15 +61,20 @@ main{padding-top:16px}
 .m-score{font-weight:700;font-size:14px;color:#fff;min-width:52px;text-align:center;letter-spacing:.04em}
 .m-pend{color:var(--dim);font-weight:400;font-size:12px}
 .bk-cols{display:flex;gap:12px;padding:14px;overflow-x:auto;-webkit-overflow-scrolling:touch}
-.bk-col{flex:1;min-width:220px;display:flex;flex-direction:column;justify-content:space-around;gap:12px}
+.bk-col{flex:1;min-width:280px;display:flex;flex-direction:column;justify-content:space-around;gap:12px}
 .bk-round{font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--mut2);font-weight:700}
 .bk-match{background:#0F0F11;border:1px solid var(--line)}
 .bk-label{font-size:9px;letter-spacing:.16em;color:var(--dim);padding:5px 10px 0;font-weight:700}
 .bk-row{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 10px}
 .bk-row + .bk-row{border-top:1px solid var(--line2)}
-.bk-name{font-size:12px;color:#B9B9C0;min-width:0;overflow-wrap:anywhere}
+.bk-name{font-size:12px;color:#B9B9C0;min-width:0;overflow-wrap:anywhere;flex:1}
 .bk-bye{color:var(--dim);font-style:italic}
-.bk-score{font-weight:700;font-size:14px;color:#fff;min-width:22px;text-align:right}
+.bk-score{font-weight:700;font-size:13px;color:#fff;width:38px;flex:0 0 38px;text-align:center}
+.bk-rule{padding:4px 10px 7px;color:var(--mut2);font-size:9px;line-height:1.35;border-bottom:1px solid var(--line2)}
+.bk-set-head{display:flex;align-items:center;gap:5px;padding:5px 10px 2px;color:var(--dim);font-size:8px;text-transform:uppercase;letter-spacing:.08em}
+.bk-set-head span:first-child{flex:1}
+.bk-set-head .bk-set-col{width:38px;flex:0 0 38px;text-align:center}
+.bk-score-cells{display:flex;gap:5px;align-items:center}
 .bk-win .bk-name,.bk-win .bk-score{color:var(--gold);font-weight:700}
 .champ-card{border:1px solid;padding:12px;text-align:center;margin-top:4px}
 .champ-card .k{font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--mut2);margin-bottom:4px}
@@ -132,7 +137,7 @@ main{padding-top:16px}
 <script src="torneo.js"></script>
 <script>
 var DATA=null, QUAL=null;
-var ZONE={main:{c:"#B8933A",l:"PRINCIPAL"},cons:{c:"#9BA3AE",l:"CONSOLACIÓN"},out:{c:"transparent",l:""}};
+var ZONE={main:{c:"#B8933A",l:"ORO"},cons:{c:"#9BA3AE",l:"CONSOLACIÓN"},out:{c:"transparent",l:""}};
 var $=function(id){return document.getElementById(id);};
 
 function courts(){return DATA.meta&&DATA.meta.courts?Number(DATA.meta.courts)||5:5;}
@@ -155,7 +160,8 @@ function renderInscription(el,titulo){
 function renderClas(){
   var el=$("v-clas");
   if(!DATA.groups){renderInscription(el,"Inscripción en curso");return;}
-  var zm=zoneMap(QUAL);
+  var complete=groupStageComplete(DATA);
+  var zm=complete?zoneMap(QUAL):{};
   var h='<div class="groups-grid">';
   DATA.groups.forEach(function(_,g){
     h+='<div class="panel"><div class="panel-head">Grupo '+GROUP_LETTERS[g]+'<span class="rest">'+DATA.groups[g].length+' parejas</span></div><div class="tbl-wrap"><table class="tbl"><thead><tr><th></th><th style="text-align:left">Pareja</th><th>PJ</th><th>PG</th><th>PP</th><th>DIF</th></tr></thead><tbody>';
@@ -167,7 +173,11 @@ function renderClas(){
     });
     h+='</tbody></table></div></div>';
   });
-  h+='</div><div class="hint">Se clasifican 8 parejas al cuadro principal y las 8 siguientes a consolación, por posición en el grupo y, en caso de empate, por % de victorias y diferencia media de puntos.</div>';
+  var exactFormat=DATA.pairs.length===25&&DATA.groups.length===5&&DATA.groups.every(function(group){return group.length===5;});
+  var finalRule=exactFormat
+    ?'Clasificación final: Grupo Oro = los 5 primeros y los 3 mejores segundos. Consolación = los 2 segundos restantes, los 5 terceros y el mejor cuarto.'
+    :'Clasificación final: las 8 primeras parejas del orden por posiciones pasan a Oro y las 8 siguientes a Consolación.';
+  h+='</div><div class="hint">'+(complete?finalRule:'Clasificación provisional. Las zonas Oro y Consolación aparecerán cuando terminen los '+groupMatchList(DATA).length+' partidos de grupos.')+'</div>';
   el.innerHTML=h;
 }
 
@@ -195,26 +205,30 @@ function renderHorario(){
   el.innerHTML=h;
 }
 
-function bkMatchHTML(m,a,b,label){
+function bkMatchHTML(draw,round,m,a,b,label){
+  var format=matchFormat(draw,round);
+  migrateBracketMatch(m,format);
   var bye=(a&&!b)||(!a&&b);
   var valid=a&&b&&m&&m.aId===a.id&&m.bId===b.id;
-  var s1=valid?m.s1:"",s2=valid?m.s2:"";
-  var w=bye?(a||b):((a&&b&&m)?winnerOf({s1:s1,s2:s2,aId:m.aId,bId:m.bId},a,b):null);
-  var row=function(t,s){
+  var sets=valid?normalizedMatchSets(m,format):format.targets.map(function(){return emptyScoreSet();});
+  var w=bye?(a||b):((a&&b&&m)?winnerOf(m,a,b,format):null);
+  var head='<div class="bk-set-head"><span></span>'+format.targets.map(function(target,i){return '<span class="bk-set-col">S'+(i+1)+' · '+target+'</span>';}).join('')+'</div>';
+  var row=function(t,field){
     var name=t?escHtml(t.name):(bye?'<span class="bk-bye">— pase directo —</span>':'Por definir');
-    return '<div class="bk-row'+(w&&t&&w.id===t.id?' bk-win':'')+'"><span class="bk-name">'+name+'</span><span class="bk-score">'+(s!==""&&s!=null&&!bye?escHtml(s):'–')+'</span></div>';
+    var scores=sets.map(function(set){var value=set[field];return '<span class="bk-score">'+(value!==""&&!bye?escHtml(value):'–')+'</span>';}).join('');
+    return '<div class="bk-row'+(w&&t&&w.id===t.id?' bk-win':'')+'"><span class="bk-name">'+name+'</span><span class="bk-score-cells">'+scores+'</span></div>';
   };
-  return '<div class="bk-match"><div class="bk-label">'+label+'</div>'+row(a,s1)+row(b,s2)+'</div>';
+  return '<div class="bk-match"><div class="bk-label">'+label+'</div><div class="bk-rule">'+escHtml(formatRuleText(format))+'</div>'+head+row(a,"s1")+row(b,"s2")+'</div>';
 }
 
 function drawHTML(draw,title,accent,headClass){
   var br=DATA.bracket[draw];
-  var d=bracketDerived(br);
+  var d=bracketDerived(br,draw);
   var h='<div class="panel"><div class="panel-head '+headClass+'">'+title+'</div><div class="bk-cols">';
-  h+='<div class="bk-col"><div class="bk-round">Cuartos</div>'+br.qf.map(function(m,i){return bkMatchHTML(m,m.a,m.b,"QF"+(i+1));}).join('')+'</div>';
-  h+='<div class="bk-col"><div class="bk-round">Semifinales</div>'+d.sfPairs.map(function(p,i){return bkMatchHTML(br.sf[i],p[0],p[1],"SF"+(i+1));}).join('')+'</div>';
-  h+='<div class="bk-col"><div class="bk-round">Final y podio</div>'+bkMatchHTML(br.f[0],d.sfW[0],d.sfW[1],"FINAL")
-    +bkMatchHTML(br.third[0],d.sfL[0],d.sfL[1],"3.º / 4.º PUESTO");
+  h+='<div class="bk-col"><div class="bk-round">Cuartos</div>'+br.qf.map(function(m,i){return bkMatchHTML(draw,"qf",m,m.a,m.b,"QF"+(i+1));}).join('')+'</div>';
+  h+='<div class="bk-col"><div class="bk-round">Semifinales</div>'+d.sfPairs.map(function(p,i){return bkMatchHTML(draw,"sf",br.sf[i],p[0],p[1],"SF"+(i+1));}).join('')+'</div>';
+  h+='<div class="bk-col"><div class="bk-round">Final y podio</div>'+bkMatchHTML(draw,"f",br.f[0],d.sfW[0],d.sfW[1],"FINAL")
+    +bkMatchHTML(draw,"third",br.third[0],d.sfL[0],d.sfL[1],"3.º / 4.º PUESTO");
   if(d.champ)h+='<div class="champ-card" style="border-color:'+accent+'"><div class="k">Campeón</div><div class="n" style="color:'+accent+'">'+escHtml(d.champ.name)+'</div></div>';
   if(d.thirdPlace)h+='<div class="champ-card" style="border-color:'+accent+'"><div class="k">3.º puesto</div><div class="n" style="color:'+accent+'">'+escHtml(d.thirdPlace.name)+'</div></div>'
     +'<div class="champ-card" style="border-color:var(--line)"><div class="k">4.º puesto</div><div class="n" style="color:var(--mut)">'+escHtml(d.fourthPlace.name)+'</div></div>';
@@ -229,10 +243,10 @@ function renderCuadros(){
     $("champ-banner").innerHTML="";
     return;
   }
-  ensureBracketThirdPlace(DATA.bracket);
-  var main=drawHTML("main","Cuadro principal","#B8933A","gold");
-  var cons=drawHTML("cons","Consolación","#9BA3AE","silver");
-  el.innerHTML=main.html+cons.html;
+  migrateTournamentState(DATA);
+  var main=drawHTML("main","Grupo Oro","#B8933A","gold");
+  var cons=drawHTML("cons","Grupo Consolación","#9BA3AE","silver");
+  el.innerHTML=main.html+cons.html+'<div class="hint">Oro: cuartos a un set de 15; semifinales, final y 3.º/4.º al mejor de 3. Consolación: todos los partidos a un set de 15. Siempre hay que ganar por 2 y no existe límite de puntuación.</div>';
   $("champ-banner").innerHTML=main.champ
     ?'<div class="champ-banner"><div class="champ-k">🏆 Campeones del torneo</div><div class="champ-n">'+escHtml(main.champ.name)+'</div>'+(cons.champ?'<div class="champ-sub">Consolación: '+escHtml(cons.champ.name)+'</div>':'')+'</div>'
     :"";
@@ -276,7 +290,7 @@ function load(){
     .then(function(r){if(!r.ok)throw new Error(r.status);return r.json();})
     .then(function(d){
       if(!d||!d.pairs)throw new Error("formato");
-      DATA=d;$("err").style.display="none";renderAll();
+      migrateTournamentState(d);DATA=d;$("err").style.display="none";renderAll();
     })
     .catch(function(){$("err").style.display=DATA?"none":"block";});
 }

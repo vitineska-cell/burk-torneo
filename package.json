@@ -1,0 +1,11 @@
+{
+  "name": "burk-torneo",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "test": "node --check torneo.js && node tests/torneo.test.js && node tests/ui.test.js"
+  },
+  "devDependencies": {
+    "jsdom": "26.1.0"
+  }
+}
