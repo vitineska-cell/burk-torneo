@@ -111,6 +111,7 @@ async function run() {
   let admin;
   let publicPage;
   let embedPage;
+  let parentPage;
 
   try {
     const adminErrors = [];
@@ -315,13 +316,64 @@ async function run() {
       Array.from(embedWindow.document.querySelectorAll("style")).some((style) => style.textContent.includes("max-width:1400px")),
       "La vista embebida debe conservar el ancho especial de WordPress"
     );
+
+    const heightMessages = [];
+    embedWindow.postMessage = (data, targetOrigin) => heightMessages.push({ data, targetOrigin });
+    const embedWrap = query(embedWindow, ".wrap");
+    let measuredBottom = 3180;
+    embedWrap.getBoundingClientRect = () => ({ bottom: measuredBottom });
+    embedWindow.dispatchEvent(new embedWindow.Event("resize"));
+    assert.equal(heightMessages[0].data.type, "burk-torneo:height");
+    assert.equal(heightMessages[0].data.height, 3228);
+    assert.equal(heightMessages[0].targetOrigin, "*");
+    embedWindow.dispatchEvent(new embedWindow.Event("resize"));
+    assert.equal(heightMessages.length, 1, "No debe repetir una altura que no ha cambiado");
+    measuredBottom = 1180;
+    embedWindow.dispatchEvent(new embedWindow.Event("resize"));
+    assert.equal(heightMessages[1].data.height, 1228, "El iframe también debe poder reducir su altura");
     assert.deepEqual(embedErrors, []);
+
+    const parentErrors = [];
+    parentPage = new JSDOM(
+      '<!DOCTYPE html><html><body><iframe id="burk-torneo-frame"></iframe>' +
+      '<script src="' + baseUrl + '/embed-parent.js"></script></body></html>',
+      {
+        url: baseUrl + "/wordpress-test.html",
+        runScripts: "dangerously",
+        resources: new LocalResources(),
+        pretendToBeVisual: true,
+        virtualConsole: createConsole(parentErrors)
+      }
+    );
+    const parentWindow = parentPage.window;
+    await waitFor(() => parentWindow.document.readyState === "complete", "puente de altura de WordPress");
+    const parentFrame = query(parentWindow, "#burk-torneo-frame");
+    parentWindow.dispatchEvent(new parentWindow.MessageEvent("message", {
+      origin: "https://vitineska-cell.github.io",
+      source: parentFrame.contentWindow,
+      data: { type: "burk-torneo:height", height: 3228 }
+    }));
+    assert.equal(parentFrame.style.height, "3228px");
+    parentWindow.dispatchEvent(new parentWindow.MessageEvent("message", {
+      origin: "https://otra-web.example",
+      source: parentFrame.contentWindow,
+      data: { type: "burk-torneo:height", height: 900 }
+    }));
+    assert.equal(parentFrame.style.height, "3228px", "Debe ignorar mensajes de otro origen");
+    parentWindow.dispatchEvent(new parentWindow.MessageEvent("message", {
+      origin: "https://vitineska-cell.github.io",
+      source: parentFrame.contentWindow,
+      data: { type: "burk-torneo:height", height: 50000 }
+    }));
+    assert.equal(parentFrame.style.height, "3228px", "Debe rechazar alturas disparatadas");
+    assert.deepEqual(parentErrors, []);
 
     console.log(
       "OK · panel, carga de datos, validación 15/11 sin límite, cuadros Oro/Consolación, " +
-      "publicación simulada, web pública y vista embebida"
+      "publicación simulada, web pública, vista embebida y scroll único en WordPress"
     );
   } finally {
+    if (parentPage) parentPage.window.close();
     if (embedPage) embedPage.window.close();
     if (publicPage) publicPage.window.close();
     if (admin) admin.window.close();

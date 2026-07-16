@@ -19,6 +19,26 @@ Tus enlaces (guárdalos en favoritos):
 - **Público:** `https://vitineska-cell.github.io/burk-torneo/`
 - **Tu panel:** `https://vitineska-cell.github.io/burk-torneo/admin.html`
 
+## Integración en burksport.com sin doble scroll
+
+La página de WordPress debe utilizar este bloque de **HTML personalizado**. La
+altura inicial de 1.400 px actúa como respaldo; `embed-parent.js` la adapta al
+contenido visible para que el móvil use únicamente el scroll de burksport.com.
+
+```html
+<iframe
+  id="burk-torneo-frame"
+  src="https://vitineska-cell.github.io/burk-torneo/embed.html"
+  style="width:100%; height:1400px; border:0; display:block;"
+  loading="eager"
+  title="Torneo BÜRK en directo">
+</iframe>
+<script src="https://vitineska-cell.github.io/burk-torneo/embed-parent.js"></script>
+```
+
+El ajuste solo modifica la altura exterior del `iframe`. No cambia estilos,
+datos, pestañas ni funcionamiento del torneo.
+
 ---
 
 ## FASE 1 · Actualizar el repositorio (~3 min) — ÚNICO PASO TÉCNICO
