@@ -2,7 +2,7 @@
   "schemaVersion": 3,
   "meta": {
     "title": "BÜRK · TORNEO NOCTURNO EN DIRECTO",
-    "updatedAt": "2026-07-18T19:32:50.580Z",
+    "updatedAt": "2026-07-18T19:34:28.280Z",
     "courts": 5
   },
   "pairs": [
@@ -371,7 +371,349 @@
       "s2": "10"
     }
   },
-  "bracket": null,
+  "bracket": {
+    "main": {
+      "qf": [
+        {
+          "sets": [
+            {
+              "s1": "",
+              "s2": ""
+            }
+          ],
+          "aId": null,
+          "bId": null,
+          "a": {
+            "id": "pmrh23e5813",
+            "name": "Francisco Ramos Sánchez / F. Javier de Marcos del Pozo",
+            "group": 0,
+            "letter": "A"
+          },
+          "b": {
+            "id": "pmrh22n5w10",
+            "name": "Javier Hidalgo Rodríguez / Javier Hidalgo Martín",
+            "group": 4,
+            "letter": "E"
+          },
+          "slot": 1,
+          "court": 1
+        },
+        {
+          "sets": [
+            {
+              "s1": "",
+              "s2": ""
+            }
+          ],
+          "aId": null,
+          "bId": null,
+          "a": {
+            "id": "pmrkzny9m3",
+            "name": "Guillermo Hernando Garcia / Hugo Granados Jiménez",
+            "group": 1,
+            "letter": "B"
+          },
+          "b": {
+            "id": "pmrh1zuby2",
+            "name": "Rafael Cecilio / Chema Bravo Balmori",
+            "group": 3,
+            "letter": "D"
+          },
+          "slot": 1,
+          "court": 2
+        },
+        {
+          "sets": [
+            {
+              "s1": "",
+              "s2": ""
+            }
+          ],
+          "aId": null,
+          "bId": null,
+          "a": {
+            "id": "pmrh2153b5",
+            "name": "Javier Ramos Domínguez / José Luis Fernández Arévalo",
+            "group": 2,
+            "letter": "C"
+          },
+          "b": {
+            "id": "pmrkzogow4",
+            "name": "Daniel Hernando Gómez / José Manuel Granados Sánchez",
+            "group": 1,
+            "letter": "B"
+          },
+          "slot": 1,
+          "court": 3
+        },
+        {
+          "sets": [
+            {
+              "s1": "",
+              "s2": ""
+            }
+          ],
+          "aId": null,
+          "bId": null,
+          "a": {
+            "id": "pmrkzng302",
+            "name": "Jose Alberto Martinez Moreno / Victor Alvarez Iglesia",
+            "group": 4,
+            "letter": "E"
+          },
+          "b": {
+            "id": "pmrh23ne414",
+            "name": "Facundo López / Alex Salar",
+            "group": 3,
+            "letter": "D"
+          },
+          "slot": 1,
+          "court": 4
+        }
+      ],
+      "sf": [
+        {
+          "sets": [
+            {
+              "s1": "",
+              "s2": ""
+            },
+            {
+              "s1": "",
+              "s2": ""
+            },
+            {
+              "s1": "",
+              "s2": ""
+            }
+          ],
+          "aId": null,
+          "bId": null,
+          "slot": 3,
+          "court": 1
+        },
+        {
+          "sets": [
+            {
+              "s1": "",
+              "s2": ""
+            },
+            {
+              "s1": "",
+              "s2": ""
+            },
+            {
+              "s1": "",
+              "s2": ""
+            }
+          ],
+          "aId": null,
+          "bId": null,
+          "slot": 3,
+          "court": 2
+        }
+      ],
+      "f": [
+        {
+          "sets": [
+            {
+              "s1": "",
+              "s2": ""
+            },
+            {
+              "s1": "",
+              "s2": ""
+            },
+            {
+              "s1": "",
+              "s2": ""
+            }
+          ],
+          "aId": null,
+          "bId": null,
+          "slot": 4,
+          "court": 1
+        }
+      ],
+      "third": [
+        {
+          "sets": [
+            {
+              "s1": "",
+              "s2": ""
+            },
+            {
+              "s1": "",
+              "s2": ""
+            },
+            {
+              "s1": "",
+              "s2": ""
+            }
+          ],
+          "aId": null,
+          "bId": null,
+          "slot": 4,
+          "court": 3
+        }
+      ]
+    },
+    "cons": {
+      "qf": [
+        {
+          "sets": [
+            {
+              "s1": "",
+              "s2": ""
+            }
+          ],
+          "aId": null,
+          "bId": null,
+          "a": {
+            "id": "pmrh23wfc15",
+            "name": "Fernando Delgado Trompeta / Álvaro Marín Rodriguez",
+            "group": 2,
+            "letter": "C"
+          },
+          "b": {
+            "id": "pmrh235aq12",
+            "name": "José Antonio Jaramillo Mendes / Marisol Juárez Roncero",
+            "group": 0,
+            "letter": "A"
+          },
+          "slot": 1,
+          "court": 5
+        },
+        {
+          "sets": [
+            {
+              "s1": "",
+              "s2": ""
+            }
+          ],
+          "aId": null,
+          "bId": null,
+          "a": {
+            "id": "pmrh22xnu11",
+            "name": "Victoria Alzina / Raúl Bravo",
+            "group": 4,
+            "letter": "E"
+          },
+          "b": {
+            "id": "pmrkzms9o1",
+            "name": "Cristina Sanz / Ines Perez",
+            "group": 3,
+            "letter": "D"
+          },
+          "slot": 2,
+          "court": 1
+        },
+        {
+          "sets": [
+            {
+              "s1": "",
+              "s2": ""
+            }
+          ],
+          "aId": null,
+          "bId": null,
+          "a": {
+            "id": "pmrh20mk33",
+            "name": "Gorka Ochoa Llases / Aurelio Bautista González",
+            "group": 0,
+            "letter": "A"
+          },
+          "b": {
+            "id": "pmrh22eg09",
+            "name": "Fernando Sanchez / Laudelino Quintero",
+            "group": 3,
+            "letter": "D"
+          },
+          "slot": 2,
+          "court": 2
+        },
+        {
+          "sets": [
+            {
+              "s1": "",
+              "s2": ""
+            }
+          ],
+          "aId": null,
+          "bId": null,
+          "a": {
+            "id": "pmrloxugr10",
+            "name": "Bárbara Molina Durán / Jesús Moreno Aguilar",
+            "group": 1,
+            "letter": "B"
+          },
+          "b": {
+            "id": "pmrh1tar51",
+            "name": "José Campoy / José Fernández",
+            "group": 2,
+            "letter": "C"
+          },
+          "slot": 2,
+          "court": 3
+        }
+      ],
+      "sf": [
+        {
+          "sets": [
+            {
+              "s1": "",
+              "s2": ""
+            }
+          ],
+          "aId": null,
+          "bId": null,
+          "slot": 3,
+          "court": 3
+        },
+        {
+          "sets": [
+            {
+              "s1": "",
+              "s2": ""
+            }
+          ],
+          "aId": null,
+          "bId": null,
+          "slot": 3,
+          "court": 4
+        }
+      ],
+      "f": [
+        {
+          "sets": [
+            {
+              "s1": "",
+              "s2": ""
+            }
+          ],
+          "aId": null,
+          "bId": null,
+          "slot": 4,
+          "court": 2
+        }
+      ],
+      "third": [
+        {
+          "sets": [
+            {
+              "s1": "",
+              "s2": ""
+            }
+          ],
+          "aId": null,
+          "bId": null,
+          "slot": 4,
+          "court": 4
+        }
+      ]
+    },
+    "scheduleCourts": 5
+  },
   "raffle": {
     "winners": []
   }
