@@ -2,7 +2,7 @@
   "schemaVersion": 3,
   "meta": {
     "title": "BÜRK · TORNEO NOCTURNO EN DIRECTO",
-    "updatedAt": "2026-07-18T21:20:05.757Z",
+    "updatedAt": "2026-07-18T21:23:27.555Z",
     "courts": 5
   },
   "pairs": [
@@ -720,6 +720,16 @@
         "name": "José Antonio Jaramillo Mendes",
         "prize": "SESION DE FISIOTERAPIA",
         "at": "2026-07-18T19:38:22.515Z"
+      },
+      {
+        "name": "Eduardo González Fermosel",
+        "prize": "SESION DE FOTOS EN ESTUDIO",
+        "at": "2026-07-18T21:21:31.221Z"
+      },
+      {
+        "name": "Raúl Fernández Pulido",
+        "prize": "PALA LEGEND",
+        "at": "2026-07-18T21:22:07.112Z"
       }
     ]
   }
