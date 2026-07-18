@@ -2,7 +2,7 @@
   "schemaVersion": 3,
   "meta": {
     "title": "BÜRK · TORNEO NOCTURNO EN DIRECTO",
-    "updatedAt": "2026-07-18T19:57:59.932Z",
+    "updatedAt": "2026-07-18T19:59:20.959Z",
     "courts": 5
   },
   "pairs": [
@@ -449,12 +449,12 @@
         {
           "sets": [
             {
-              "s1": "",
-              "s2": ""
+              "s1": "15",
+              "s2": "12"
             }
           ],
-          "aId": null,
-          "bId": null,
+          "aId": "pmrkzng302",
+          "bId": "pmrh23ne414",
           "a": {
             "id": "pmrkzng302",
             "name": "Jose Alberto Martinez Moreno / Victor Alvarez Iglesia",
