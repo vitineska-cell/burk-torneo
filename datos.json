@@ -2,7 +2,7 @@
   "schemaVersion": 3,
   "meta": {
     "title": "BÜRK · TORNEO NOCTURNO EN DIRECTO",
-    "updatedAt": "2026-07-18T17:36:30.336Z",
+    "updatedAt": "2026-07-18T17:36:47.221Z",
     "courts": 5
   },
   "pairs": [
@@ -193,6 +193,10 @@
     "0-0-1": {
       "s1": "3",
       "s2": "15"
+    },
+    "1-0-1": {
+      "s1": "15",
+      "s2": "6"
     }
   },
   "bracket": null,
