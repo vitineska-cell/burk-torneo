@@ -2,7 +2,7 @@
   "schemaVersion": 3,
   "meta": {
     "title": "BÜRK · TORNEO NOCTURNO EN DIRECTO",
-    "updatedAt": "2026-07-18T20:04:18.845Z",
+    "updatedAt": "2026-07-18T20:09:45.607Z",
     "courts": 5
   },
   "pairs": [
@@ -587,12 +587,12 @@
         {
           "sets": [
             {
-              "s1": "",
-              "s2": ""
+              "s1": "15",
+              "s2": "8"
             }
           ],
-          "aId": null,
-          "bId": null,
+          "aId": "pmrh22xnu11",
+          "bId": "pmrkzms9o1",
           "a": {
             "id": "pmrh22xnu11",
             "name": "Victoria Alzina / Raúl Bravo",
