@@ -2,7 +2,7 @@
   "schemaVersion": 3,
   "meta": {
     "title": "BÜRK · TORNEO NOCTURNO EN DIRECTO",
-    "updatedAt": "2026-07-18T20:10:13.455Z",
+    "updatedAt": "2026-07-18T20:13:29.025Z",
     "courts": 5
   },
   "pairs": [
@@ -635,12 +635,12 @@
         {
           "sets": [
             {
-              "s1": "",
-              "s2": ""
+              "s1": "15",
+              "s2": "10"
             }
           ],
-          "aId": null,
-          "bId": null,
+          "aId": "pmrloxugr10",
+          "bId": "pmrh1tar51",
           "a": {
             "id": "pmrloxugr10",
             "name": "Bárbara Molina Durán / Jesús Moreno Aguilar",
