@@ -2,7 +2,7 @@
   "schemaVersion": 3,
   "meta": {
     "title": "BÜRK · TORNEO NOCTURNO EN DIRECTO",
-    "updatedAt": "2026-07-18T20:01:50.758Z",
+    "updatedAt": "2026-07-18T20:03:56.638Z",
     "courts": 5
   },
   "pairs": [
@@ -563,12 +563,12 @@
         {
           "sets": [
             {
-              "s1": "",
-              "s2": ""
+              "s1": "14",
+              "s2": "16"
             }
           ],
-          "aId": null,
-          "bId": null,
+          "aId": "pmrh23wfc15",
+          "bId": "pmrh235aq12",
           "a": {
             "id": "pmrh23wfc15",
             "name": "Fernando Delgado Trompeta / Álvaro Marín Rodriguez",
