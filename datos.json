@@ -2,7 +2,7 @@
   "schemaVersion": 3,
   "meta": {
     "title": "BÜRK · TORNEO NOCTURNO EN DIRECTO",
-    "updatedAt": "2026-07-18T19:56:18.349Z",
+    "updatedAt": "2026-07-18T19:57:43.568Z",
     "courts": 5
   },
   "pairs": [
@@ -401,12 +401,12 @@
         {
           "sets": [
             {
-              "s1": "",
-              "s2": ""
+              "s1": "15",
+              "s2": "13"
             }
           ],
-          "aId": null,
-          "bId": null,
+          "aId": "pmrkzny9m3",
+          "bId": "pmrh1zuby2",
           "a": {
             "id": "pmrkzny9m3",
             "name": "Guillermo Hernando Garcia / Hugo Granados Jiménez",
