@@ -2,7 +2,7 @@
   "schemaVersion": 3,
   "meta": {
     "title": "BÜRK · TORNEO NOCTURNO EN DIRECTO",
-    "updatedAt": "2026-07-18T21:11:32.031Z",
+    "updatedAt": "2026-07-18T21:15:21.401Z",
     "courts": 5
   },
   "pairs": [
@@ -517,20 +517,20 @@
         {
           "sets": [
             {
-              "s1": "",
-              "s2": ""
+              "s1": "15",
+              "s2": "8"
             },
             {
-              "s1": "",
-              "s2": ""
+              "s1": "15",
+              "s2": "10"
             },
             {
               "s1": "",
               "s2": ""
             }
           ],
-          "aId": null,
-          "bId": null,
+          "aId": "pmrh23e5813",
+          "bId": "pmrh2153b5",
           "slot": 4,
           "court": 1
         }
@@ -539,20 +539,20 @@
         {
           "sets": [
             {
-              "s1": "",
-              "s2": ""
+              "s1": "15",
+              "s2": "10"
             },
             {
-              "s1": "",
-              "s2": ""
+              "s1": "15",
+              "s2": "10"
             },
             {
               "s1": "",
               "s2": ""
             }
           ],
-          "aId": null,
-          "bId": null,
+          "aId": "pmrkzny9m3",
+          "bId": "pmrkzng302",
           "slot": 4,
           "court": 3
         }
