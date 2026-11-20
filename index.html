@@ -98,6 +98,33 @@ main{padding-top:16px}
 .ftr{text-align:center;font-size:11px;color:var(--dim);padding:26px 16px 0;letter-spacing:.2em;text-transform:uppercase}
 .ftr b{color:var(--mut);font-weight:700}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+@media (max-width: 700px) {
+  #v-clas .tbl, #v-clas tbody { display: block; min-width: 0; }
+  #v-clas thead { position: absolute; clip-path: inset(50%); width: 1px; height: 1px; overflow: hidden; }
+  #v-clas tbody tr {
+    display: grid; grid-template-columns: repeat(5,minmax(0,1fr));
+    gap: 6px 0; padding: 12px; position: relative; border-bottom: 1px solid var(--line);
+  }
+  #v-clas tbody tr:last-child { border-bottom: 0; }
+  #v-clas td { border: 0; padding: 0; font-size: 14px; }
+  #v-clas td:first-child { position: absolute; top: 12px; left: 12px; color: var(--gold); font-weight: 700; }
+  #v-clas .tbl td:nth-child(2) {
+    grid-column: 1 / -1; padding-left: 24px; white-space: normal;
+    overflow-wrap: anywhere; font-size: 16px; line-height: 1.35;
+  }
+  #v-clas td:nth-child(n+3)::before { color: #b4b4bb; font-size: 12px; margin-right: 4px; }
+  #v-clas td:nth-child(3)::before { content: "PJ"; }
+  #v-clas td:nth-child(4)::before { content: "PG"; }
+  #v-clas td:nth-child(5)::before { content: "PF"; }
+  #v-clas td:nth-child(6)::before { content: "PC"; }
+  #v-clas td:nth-child(7)::before { content: "DIF"; }
+  #v-horario .panel-head { font-size: 21px; gap: 4px 10px; }
+  #v-horario .rest, #v-horario .bk-rule { font-size: 12px; color: #b4b4bb; }
+  #v-horario .bk-name, #v-horario .bk-score { font-size: 16px; line-height: 1.35; }
+  #v-horario .bk-name { color: #eee; }
+  #v-horario .bk-win .bk-name { color: var(--gold); }
+  #v-horario .bk-score { width: 25px; flex-basis: 25px; }
+}
 </style>
 </head>
 <body data-almanzor>
