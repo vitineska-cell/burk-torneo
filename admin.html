@@ -180,6 +180,8 @@ main{padding-top:16px}
 <script src="torneo.js"></script>
 <script src="calendario-almanzor.js"></script>
 <script src="almanzor.js"></script>
+<script src="vendor/fflate-0.8.2.js"></script>
+<script src="inscripciones-almanzor.js"></script>
 <script src="vistas-almanzor.js"></script>
 <script>
 var LS_STATE = "burk-admin-" + EVENT_ID;
@@ -304,7 +306,7 @@ function renderInscripcion() {
     '</button></div></div>' +
     (categoryNames.some(name => state.categories[name].groups) ? '' :
     '<div class="panel"><div class="panel-head">Cargar las tres listas de parejas</div><div class="meta-row">' +
-    '<label>Listado de inscripciones (.json) <input type="file" accept=".json,application/json" id="roster-file"></label></div></div>');
+    '<label>Excel definitivo de parejas (.xlsx) o listado .json <input type="file" accept=".xlsx,.json" id="roster-file"></label></div></div>');
 }
 
 function render() {
@@ -340,7 +342,10 @@ $("v-inscripcion").addEventListener("input", event => {
 $("v-inscripcion").addEventListener("change", async event => {
   if (event.target.id !== "roster-file" || !event.target.files.length) return;
   try {
-    const file = JSON.parse(await event.target.files[0].text());
+    const selected = event.target.files[0];
+    if (selected.size > 8 * 1024 * 1024) throw Error("Selecciona el Excel definitivo de parejas del torneo.");
+    const file = /\.xlsx$/i.test(selected.name)
+      ? rosterFromExcel(await selected.arrayBuffer()) : JSON.parse(await selected.text());
     if (categoryNames.some(name => state.categories[name].pairs.length) && !confirm("¿Reemplazar las tres listas de inscripción?")) return;
     importPairs(state, file); markDirty(); render(); toast("✓ Se han cargado las 31 parejas. Puedes revisar sus nombres.");
   } catch (error) { toast(error.message, 6000); }

@@ -121,10 +121,15 @@ async function run() {
       file.categories[name] = Array.from({length:count}, (_,i) => ({id:"p"+i,p1:name+" A"+i,p2:name+" B"+i}));
     }
     const upload = query(win, "#roster-file");
-    Object.defineProperty(upload, "files", {value:[{text: async () => JSON.stringify(file)}]});
+    const workbook = fs.readFileSync(path.join(root, "tests/fixtures/parejas.xlsx"));
+    Object.defineProperty(upload, "files", {value:[{
+      name:"parejas.xlsx", size:workbook.length,
+      arrayBuffer:async () => Uint8Array.from(workbook).buffer
+    }]});
     upload.dispatchEvent(new win.Event("change", {bubbles:true}));
     await waitFor(() => query(win, '.pair-row input'), "carga de la lista editable");
     for (const [name, count] of Object.entries(names)) {
+      assert.deepEqual(JSON.parse(JSON.stringify(win.state.categories[name].pairs)),file.categories[name]);
       select(win, name);
       assert.equal(win.document.querySelectorAll(".pair-row").length, count);
       assert.equal(win.state.categories[name].groups, null);
