@@ -47,6 +47,10 @@ main{padding-top:16px}
 .tbl-wrap{overflow-x:auto}
 .tbl{width:100%;border-collapse:collapse;font-size:13px}
 .tbl th{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--mut2);font-weight:600;padding:8px 6px;text-align:center}
+#v-clas .tbl{table-layout:fixed;font-variant-numeric:tabular-nums}
+#v-clas .tbl th:first-child{width:clamp(26px,4%,56px)}
+#v-clas .tbl th:nth-child(n+3){width:clamp(32px,6%,84px)}
+#v-clas .tbl :is(th,td):nth-child(2){text-align:left;overflow-wrap:anywhere}
 .tbl td{padding:8px 6px;text-align:center;border-top:1px solid var(--line2)}
 .pos{display:inline-block;padding:2px 8px;color:var(--mut);font-weight:600}
 .team-name{font-weight:600;font-size:13px;text-align:left}
