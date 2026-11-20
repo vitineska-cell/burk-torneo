@@ -51,6 +51,14 @@ function setScoreStatus(set, target) {
   if (!scoreValueIsValid(s1) || !scoreValueIsValid(s2)) {
     return { valid: false, complete: false, winner: 0, message: "El marcador solo admite números enteros iguales o mayores que cero." };
   }
+  if (target === 21) {
+    const complete = has1 && has2;
+    const valid = Number(s1) <= 21 && Number(s2) <= 21 &&
+      (!complete || (Math.max(Number(s1), Number(s2)) === 21 && Number(s1) !== Number(s2)));
+    return { valid, complete: valid && complete,
+      winner: valid && complete ? (Number(s1) > Number(s2) ? 1 : 2) : 0,
+      message: valid ? "" : "El set termina al llegar a 21, incluido el 21–20." };
+  }
   if (!has1 || !has2) return { valid: true, complete: false, winner: 0, message: "" };
   var n1 = Number(s1), n2 = Number(s2);
   if (!Number.isSafeInteger(n1) || !Number.isSafeInteger(n2)) {
@@ -990,7 +998,7 @@ select.addEventListener("change", function () {
     module.exports.roundIsPlayable = roundIsPlayable;
   }
 
-  if (typeof document === "undefined") return;
+  if (typeof document === "undefined" || document.body.hasAttribute("data-almanzor")) return;
   document.addEventListener("DOMContentLoaded", function () {
     injectBracketStyles();
     if (document.getElementById("v-inscripcion")) installAdminEnhancement();

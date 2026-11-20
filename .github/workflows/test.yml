@@ -4,6 +4,8 @@ on:
   pull_request:
     paths:
       - "torneo.js"
+      - "*almanzor*.js"
+      - "datos-almanzor-2026.json"
       - "admin.html"
       - "index.html"
       - "embed.html"
@@ -15,6 +17,8 @@ on:
     branches: [main]
     paths:
       - "torneo.js"
+      - "*almanzor*.js"
+      - "datos-almanzor-2026.json"
       - "admin.html"
       - "index.html"
       - "embed.html"

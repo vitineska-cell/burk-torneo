@@ -125,7 +125,7 @@ main{padding-top:16px}
 .empty{text-align:center;padding:32px 16px;color:var(--mut)}
 </style>
 </head>
-<body>
+<body data-almanzor>
 <div class="wrap">
   <header class="hdr">
     <div>
@@ -158,6 +158,7 @@ main{padding-top:16px}
     <div class="note">La configuración se guarda solo en este navegador de este ordenador. El token es tu llave para publicar: no lo compartas con nadie.</div>
   </div>
 
+  <nav class="tabs" id="categories" aria-label="Modalidad"></nav>
   <nav class="tabs" id="tabs">
     <button class="tab tab-on" data-tab="inscripcion">Inscripción</button>
     <button class="tab" data-tab="resultados">Resultados</button>
@@ -177,40 +178,26 @@ main{padding-top:16px}
 <div class="toast" id="toast"></div>
 
 <script src="torneo.js"></script>
+<script src="calendario-almanzor.js"></script>
+<script src="almanzor.js"></script>
+<script src="vistas-almanzor.js"></script>
 <script>
-/* ══════════ ESTADO ══════════ */
-var LS_STATE="burk-admin-state-v2";
-var LS_CFG="burk-admin-cfg-v1";
-var state=defaultState();
-var dirty=false;
-var activeTab="inscripcion";
-var activeChip="tandas";
-var confirmRegen=false;
-var estParams={slot:15,inter:15};
-var raffleBusy=false;
-var $=function(id){return document.getElementById(id);};
+var LS_STATE = "burk-admin-" + EVENT_ID;
+var LS_CFG = "burk-admin-cfg-v1";
+var state = null, baseline = null, dirty = false;
+var activeTab = "inscripcion", category = "Mixto", raffleBusy = false, lastPublished = null;
+var $ = id => document.getElementById(id);
 
-try{
-  var saved=localStorage.getItem(LS_STATE);
-  if(saved){var p=JSON.parse(saved);if(p&&p.pairs)state=Object.assign(defaultState(),p);}
-}catch(e){}
-if(!state.meta.courts)state.meta.courts=5;
-if(!state.raffle)state.raffle={winners:[]};
-dirty=migrateTournamentState(state);
-if(dirty)persistLocal();
+function persistLocal() {
+  try { localStorage.setItem(LS_STATE, JSON.stringify({state, baseline, dirty})); }
+  catch (error) { toast("No se ha podido guardar la copia local. Mantén la pestaña abierta y publica tus cambios."); }
+}
 
-function persistLocal(){try{localStorage.setItem(LS_STATE,JSON.stringify(state));}catch(e){}}
-function markDirty(){dirty=true;persistLocal();updateStatus();}
+function markDirty() { dirty = true; persistLocal(); updateStatus(); }
 function getCfg(){
   try{var c=JSON.parse(localStorage.getItem(LS_CFG));if(c&&c.owner&&c.repo&&c.token)return c;}catch(e){}
   return null;
 }
-function sizes(){return state.groups?state.groups.map(function(g){return g.length;}):null;}
-function courts(){return Number(state.meta.courts)||5;}
-var lastScoreError="";
-
-/* ══════════ ESTADO VISUAL / TOAST ══════════ */
-var lastPublished=null;
 function updateStatus(){
   var dot=$("st-dot"),txt=$("st-txt");
   if(!getCfg()){dot.style.background="#666";txt.textContent="Configura la conexión (⚙)";return;}
@@ -228,7 +215,7 @@ function toast(msg,ms){
 /* ══════════ GITHUB API ══════════ */
 var b64encode=function(str){return btoa(unescape(encodeURIComponent(str)));};
 var b64decode=function(b64){return decodeURIComponent(escape(atob(b64.replace(/\n/g,""))));};
-var apiUrl=function(cfg){return "https://api.github.com/repos/"+cfg.owner+"/"+cfg.repo+"/contents/datos.json";};
+var apiUrl=function(cfg){return "https://api.github.com/repos/"+cfg.owner+"/"+cfg.repo+"/contents/"+DATA_FILE;};
 var apiHeaders=function(cfg){return {"Authorization":"Bearer "+cfg.token,"Accept":"application/vnd.github+json","X-GitHub-Api-Version":"2022-11-28"};};
 
 function apiGet(cfg){
@@ -240,486 +227,182 @@ function apiGet(cfg){
     });
 }
 
-function publish(){
-  var cfg=getCfg();
-  if(!cfg){toast("Antes configura usuario, repositorio y token (botón ⚙).");showCfg(true);return;}
-  var btn=$("btn-pub");
-  btn.disabled=true;btn.textContent="Publicando…";
-  migrateTournamentState(state);
-  state.meta.updatedAt=new Date().toISOString();
-  var body=JSON.stringify(state,null,2);
-  var doPut=function(sha){
-    return fetch(apiUrl(cfg),{
-      method:"PUT",headers:apiHeaders(cfg),
-      body:JSON.stringify(Object.assign({message:"Actualización del torneo",content:b64encode(body)},sha?{sha:sha}:{}))
+async function publish() {
+  const cfg = getCfg();
+  if (!cfg) { showCfg(true); toast("Configura la conexión con GitHub para publicar."); return; }
+  if (!state || !baseline) return;
+  const snapshot = JSON.stringify(state);
+  const outgoing = JSON.parse(snapshot);
+  outgoing.meta.updatedAt = new Date().toISOString();
+  const button = $("btn-pub");
+  button.disabled = true;
+  $("btn-load").disabled = true;
+  try {
+    const current = await apiGet(cfg);
+    if (!current || JSON.stringify(checkEvent(JSON.parse(b64decode(current.content)))) !== baseline) {
+      throw Error("La versión publicada ha cambiado. Revisa los datos antes de cargar la última versión.");
+    }
+    const reply = await fetch(apiUrl(cfg), {
+      method:"PUT", headers:apiHeaders(cfg), body:JSON.stringify({
+        branch:"main", sha:current.sha, message:"Actualizar torneo BÜRK Almanzor",
+        content:b64encode(JSON.stringify(outgoing, null, 2) + "\n")
+      })
     });
-  };
-  apiGet(cfg).catch(function(){return null;})
-    .then(function(cur){return doPut(cur?cur.sha:null);})
-    .then(function(r){
-      if(r.status===409){
-        return apiGet(cfg).then(function(cur){return doPut(cur?cur.sha:null);});
-      }
-      return r;
-    })
-    .then(function(r){
-      if(r.status===401||r.status===403)throw new Error("token");
-      if(!r.ok)throw new Error("PUT "+r.status);
-      dirty=false;
-      lastPublished=new Date().toLocaleTimeString("es-ES",{hour:"2-digit",minute:"2-digit"});
-      updateStatus();
-      toast("✓ Publicado. Visible en la página pública en menos de 1 minuto.");
-    })
-    .catch(function(e){
-      if(String(e.message)==="token"){
-        toast("Error de permisos: revisa que el token sea válido y tenga permiso Contents · Read and write.");
-      }else{
-        toast("No se ha podido publicar ("+e.message+"). Revisa usuario/repositorio en ⚙ y tu conexión.");
-      }
-    })
-    .then(function(){btn.disabled=false;btn.textContent="Guardar y publicar";});
+    if (reply.status === 409 || reply.status === 422) throw Error("Otra mesa ha publicado cambios. Revisa la última versión.");
+    if (!reply.ok) throw Error("GitHub ha devuelto " + reply.status + ". Revisa la conexión y los permisos.");
+    dirty = JSON.stringify(state) !== snapshot;
+    state.meta.updatedAt = outgoing.meta.updatedAt;
+    baseline = JSON.stringify(outgoing);
+    lastPublished = new Date().toLocaleTimeString("es-ES");
+    persistLocal(); updateStatus(); toast("✓ Publicado en GitHub.");
+  } catch (error) { toast(error.message, 6500); }
+  finally { button.disabled = false; $("btn-load").disabled = false; }
 }
 
-function loadPublished(){
-  if(dirty&&!confirm("Tienes cambios sin publicar en este ordenador. Si cargas la versión publicada, se sustituirán. ¿Continuar?"))return;
-  var cfg=getCfg();
-  var getData=cfg
-    ? apiGet(cfg).then(function(cur){return cur?JSON.parse(b64decode(cur.content)):null;})
-    : Promise.resolve(null);
-  getData
-    .then(function(data){
-      if(data)return data;
-      return fetch("datos.json?ts="+Date.now(),{cache:"no-store"}).then(function(r){
-        if(!r.ok)throw new Error(r.status);return r.json();
-      });
-    })
-    .then(function(data){
-      if(!data||!data.pairs)throw new Error("Los datos publicados son de la versión antigua o no tienen el formato esperado");
-      state=Object.assign(defaultState(),data);
-      if(!state.meta.courts)state.meta.courts=5;
-      if(!state.raffle)state.raffle={winners:[]};
-      var migrated=migrateTournamentState(state);
-      dirty=migrated;persistLocal();updateStatus();render();
-      toast(migrated?"✓ Datos cargados y adaptados. Pulsa Guardar y publicar para completar la migración.":"✓ Datos publicados cargados.",4200);
-    })
-    .catch(function(e){toast("No se han podido cargar los datos publicados ("+e.message+").");});
+async function loadPublished() {
+  if (dirty && !confirm("¿Sustituir los cambios locales por la versión publicada?")) return;
+  const initial = JSON.stringify(state);
+  const button = $("btn-load");
+  button.disabled = true;
+  $("btn-pub").disabled = true;
+  try {
+    const cfg = getCfg();
+    let data;
+    if (cfg) {
+      const current = await apiGet(cfg);
+      if (!current) throw Error("No se encuentra el torneo en el repositorio configurado.");
+      data = JSON.parse(b64decode(current.content));
+    } else {
+      const response = await fetch(DATA_FILE + "?ts=" + Date.now(), {cache:"no-store"});
+      if (!response.ok) throw Error("HTTP " + response.status);
+      data = await response.json();
+    }
+    checkEvent(data);
+    if (JSON.stringify(state) !== initial) throw Error("Hay cambios nuevos en el panel. Vuelve a cargar cuando termines.");
+    state = data; baseline = JSON.stringify(data); dirty = false;
+    persistLocal(); render(); updateStatus(); toast("✓ Datos publicados cargados.");
+  } catch (error) { toast("No se pudo cargar Almanzor. " + error.message, 6500); }
+  finally { button.disabled = false; $("btn-pub").disabled = !state; }
 }
 
-/* ══════════ MUTACIONES ══════════ */
-var pairSeq=0;
-function newPairId(){
-  pairSeq++;
-  var base="p"+Date.now().toString(36)+pairSeq;
-  return base;
+function renderInscripcion() {
+  const division = state.categories[category];
+  const target = targetSize(category);
+  const rows = division.pairs.map((pair, i) => '<div class="pair-row"><span class="pair-num">' + (i+1) +
+    '</span>' + ["p1", "p2"].map((field, j) => '<input data-pid="' + escHtml(pair.id) +
+      '" data-field="' + field + '" aria-label="Jugador/a ' + (j+1) + ' de la pareja ' + (i+1) +
+      '" placeholder="Jugador/a ' + (j+1) + '" value="' + escHtml(pair[field]) + '">').join("") +
+    (division.groups ? '' : '<button class="pair-del" data-del="' + pair.id + '" aria-label="Eliminar pareja">✕</button>') + '</div>').join("");
+  $("v-inscripcion").innerHTML = '<div class="panel"><div class="panel-head">' + escHtml(state.meta.title) +
+    '<span class="rest">21/11/2026 · ' + escHtml(state.meta.venue) + ' · 7 pistas</span></div>' +
+    '<div class="hint">Convocatoria 09:00 · Inicio 09:30 · Masculino y femenino desde las 14:30.</div></div>' +
+    '<div class="panel"><div class="panel-head">' + category + '<span class="rest">' + division.pairs.length +
+    ' / ' + target + ' parejas · Grupos de ' + Object.values(GROUP_SLOTS[category]).map(g => g.length).join(' + ') +
+    '</span></div>' + rows + '<div class="gen-box">' +
+    (!division.groups && division.pairs.length < target ? '<button class="btn" id="btn-add-pair">+ Añadir pareja</button> ' : '') +
+    '<button class="btn btn-gold" id="btn-draw">' + (division.groups ? 'Volver a sortear grupos' : 'Sortear grupos') +
+    '</button></div></div>' +
+    (categoryNames.some(name => state.categories[name].groups) ? '' :
+    '<div class="panel"><div class="panel-head">Cargar las tres listas de parejas</div><div class="meta-row">' +
+    '<label>Listado de inscripciones (.json) <input type="file" accept=".json,application/json" id="roster-file"></label></div></div>');
 }
-function clearCompetition(){
-  state.groups=null;state.results={};state.bracket=null;
+
+function render() {
+  if (!state) return;
+  $("categories").innerHTML = categoryNav(category);
+  document.querySelectorAll("#tabs .tab").forEach(tab => tab.classList.toggle("tab-on", tab.dataset.tab === activeTab));
+  document.querySelectorAll("main section").forEach(section => { section.hidden = false; section.style.display = section.id === "v-" + activeTab ? "" : "none"; });
+  const division = state.categories[category];
+  const el = $("v-" + activeTab);
+  if (activeTab === "inscripcion") return renderInscripcion();
+  if (activeTab === "sorteo") return renderSorteo();
+  if (!division.groups) { el.innerHTML = pendingDraw(); return; }
+  const view = competition(division, category);
+  if (activeTab === "clasificados") { el.innerHTML = groupTables(view, true); return; }
+  el.innerHTML = scheduleHTML(view, category, m => isGroup(m) === (activeTab === "resultados"), true);
 }
-function guardEditPairs(){
-  // añadir/quitar parejas tras el sorteo obliga a rehacer grupos
-  if(!state.groups)return true;
-  var hasResults=Object.keys(state.results).length>0||state.bracket;
-  var msg=hasResults
-    ? "Los grupos ya están sorteados y hay resultados. Cambiar la inscripción BORRARÁ grupos, resultados y cuadros. ¿Continuar?"
-    : "Los grupos ya están sorteados. Cambiar la inscripción los borrará y habrá que volver a sortear. ¿Continuar?";
-  if(!confirm(msg))return false;
-  clearCompetition();
-  return true;
-}
-function setResult(key,field,value){
-  value=scoreText(value);lastScoreError="";
-  if(!scoreValueIsValid(value)){lastScoreError="Solo se admiten números enteros iguales o mayores que cero.";return false;}
-  var cur=state.results[key]||{s1:"",s2:""};
-  var nx={s1:cur.s1,s2:cur.s2};nx[field]=value;
-  var status=setScoreStatus(nx,15);
-  if(!status.valid){lastScoreError=status.message;return false;}
-  var invalidatesBracket=!!state.bracket&&scoreText(cur[field])!==value;
-  if(invalidatesBracket&&!confirm("Cambiar un resultado de grupos eliminará los cuadros y sus marcadores para evitar cruces incoherentes. ¿Continuar?")){
-    lastScoreError="Cambio cancelado; los cuadros se han conservado.";return false;
-  }
-  state.results[key]=nx;
-  if(invalidatesBracket){state.bracket=null;confirmRegen=false;toast("Resultado actualizado. Los cuadros se han eliminado y deberán generarse de nuevo.",4200);}
-  markDirty();return true;
-}
-function setBracketScore(draw,round,idx,setIdx,field,value,aId,bId){
-  value=scoreText(value);lastScoreError="";
-  if(!scoreValueIsValid(value)){lastScoreError="Solo se admiten números enteros iguales o mayores que cero.";return false;}
-  var m=state.bracket[draw][round][idx];
-  var format=matchFormat(draw,round);
-  migrateBracketMatch(m,format);
-  var candidate={sets:normalizedMatchSets(m,format),aId:aId,bId:bId};
-  if(m.aId!==aId||m.bId!==bId)candidate.sets=format.targets.map(function(){return emptyScoreSet();});
-  candidate.sets[setIdx][field]=value;
-  pruneUnusedSets(candidate,format);
-  var status=matchScoreStatus(candidate,format);
-  if(!status.valid){lastScoreError=status.message;return false;}
-  m.sets=candidate.sets;m.aId=aId;m.bId=bId;
-  markDirty();return true;
-}
-function doDrawGroups(){
-  var P=state.pairs.length;
-  var incomplete=state.pairs.filter(function(p){return !(p.p1||"").trim()||!(p.p2||"").trim();}).length;
-  if(P<10){toast("Hacen falta al menos 10 parejas para formar grupos (hay "+P+").");return;}
-  if(incomplete&&!confirm(incomplete+" pareja(s) tienen jugadores sin nombre. ¿Sortear igualmente?"))return;
-  if(state.groups){
-    var hasResults=Object.keys(state.results).length>0||state.bracket;
-    var msg=hasResults
-      ? "Ya hay resultados anotados. Volver a sortear BORRARÁ grupos, resultados y cuadros. ¿Seguro?"
-      : "¿Rehacer el sorteo de grupos?";
-    if(!confirm(msg))return;
-  }
-  clearCompetition();
-  state.groups=drawGroups(state);
+
+$("tabs").addEventListener("click", event => {
+  const tab = event.target.closest("[data-tab]");
+  if (tab) { activeTab = tab.dataset.tab; render(); }
+});
+$("categories").addEventListener("click", event => {
+  const tab = event.target.closest("[data-category]");
+  if (tab) { category = tab.dataset.category; render(); }
+});
+$("v-inscripcion").addEventListener("input", event => {
+  const field = event.target;
+  if (!field.dataset.pid) return;
+  const pair = pairById(state.categories[category], field.dataset.pid);
+  pair[field.dataset.field] = field.value;
   markDirty();
-  activeTab="resultados";activeChip="tandas";syncTabs();render();
-  var f=computeFormat(P);
-  toast("Grupos sorteados: "+f.sizes.join(" + ")+" parejas. Recuerda Guardar y publicar.");
-}
-function generateBrackets(){
-  if(!groupStageComplete(state)){
-    toast("No se pueden generar los cuadros hasta completar y validar todos los partidos de la fase de grupos.",4200);
-    return;
-  }
-  var q=computeQualification(state);
-  state.bracket=makeBracket(q);
-  confirmRegen=false;
-  markDirty();
-  activeTab="cuadros";syncTabs();render();
-  toast("Cuadros generados. Recuerda: Guardar y publicar.");
-}
-
-/* ══════════ RENDER: INSCRIPCIÓN ══════════ */
-function renderInscripcion(){
-  var el=$("v-inscripcion");
-  var players=state.pairs.reduce(function(n,p){return n+((p.p1||"").trim()?1:0)+((p.p2||"").trim()?1:0);},0);
-  var fmt=computeFormat(state.pairs.length);
-  var h='<div class="panel"><div class="panel-head">Datos del torneo</div><div class="meta-row">'
-    +'<div style="flex:2;min-width:220px"><label>Título (se muestra en la página pública)</label><input id="in-title" value="'+escHtml(state.meta.title||"")+'" style="width:100%"></div>'
-    +'<div><label>Pistas disponibles</label><input id="in-courts" value="'+escHtml(state.meta.courts)+'" inputmode="numeric" style="width:90px"></div>'
-    +'</div></div>';
-
-  h+='<div class="panel"><div class="panel-head">Parejas inscritas'
-    +'<span class="rest">'+state.pairs.length+' parejas · '+players+' jugadores'
-    +(fmt?' · formato: '+fmt.sizes.join(" + "):state.pairs.length?' · mínimo 10 parejas':'')+'</span></div>';
-  if(!state.pairs.length){
-    h+='<div class="empty">Añade la primera pareja para empezar.</div>';
-  }else{
-    state.pairs.forEach(function(p,i){
-      h+='<div class="pair-row"><span class="pair-num">'+(i+1)+'</span>'
-        +'<input data-pid="'+p.id+'" data-f="p1" value="'+escHtml(p.p1||"")+'" placeholder="Jugador/a 1">'
-        +'<input data-pid="'+p.id+'" data-f="p2" value="'+escHtml(p.p2||"")+'" placeholder="Jugador/a 2">'
-        +'<button class="pair-del" data-del="'+p.id+'" title="Eliminar pareja">✕</button></div>';
-    });
-  }
-  h+='<div class="gen-box" style="padding-top:16px">'
-    +'<button class="btn" id="btn-add-pair">+ Añadir pareja</button> '
-    +'<button class="btn-gold btn" id="btn-draw" style="margin-left:8px">'+(state.groups?"Volver a sortear grupos":"Sortear grupos")+'</button>';
-  if(state.groups){
-    h+='<div class="hint" style="text-align:center">Grupos actuales: '
-      +state.groups.map(function(g,i){return GROUP_LETTERS[i]+" ("+g.length+")";}).join(" · ")
-      +'. El sorteo reparte las parejas al azar.</div>';
-  }
-  h+='</div></div>';
-
-  // estimador
-  var e=fmt?estimateTournament(state.pairs.length,courts(),estParams.slot,estParams.inter):null;
-  h+='<div class="panel"><div class="panel-head">⏱ Estimador de duración <span class="rest">solo información interna, no se publica</span></div>'
-    +'<div class="meta-row">'
-    +'<div><label>Pistas</label><input id="est-courts" value="'+escHtml(courts())+'" inputmode="numeric" style="width:80px"></div>'
-    +'<div><label>Min. por set/tanda (juego + cambio)</label><input id="est-slot" value="'+estParams.slot+'" inputmode="numeric" style="width:80px"></div>'
-    +'<div><label>Min. entre grupos y cuadros</label><input id="est-inter" value="'+estParams.inter+'" inputmode="numeric" style="width:80px"></div>'
-    +'</div>'
-    +'<div class="tbl-wrap"><table class="est-tbl"><thead><tr><th>Parejas</th><th>Grupos</th><th>Partidos/pareja</th><th>Partidos totales</th><th>Tandas</th><th>Duración estimada</th></tr></thead><tbody id="est-body"></tbody></table></div>'
-    +'<div class="hint">Base: cada set se juega al objetivo indicado y debe ganarse por 2, sin límite de puntuación. El cálculo reserva hasta 3 sets para las semifinales, la final y el 3.º/4.º puesto de Oro; el resto son partidos a un set de 15. La duración incluye el descanso entre grupos y cuadros, pero no sorteos ni comida.</div>'
-    +'</div>';
-
-  el.innerHTML=h;
-  fillEstTable();
-
-  $("in-title").addEventListener("input",function(e){state.meta.title=e.target.value;markDirty();});
-  $("in-courts").addEventListener("input",function(e){
-    var v=e.target.value.replace(/\D/g,"").slice(0,2);
-    e.target.value=v;
-    if(v&&Number(v)>=1){state.meta.courts=Number(v);markDirty();fillEstTable();var ec=$("est-courts");if(ec)ec.value=v;}
-  });
-  el.querySelectorAll(".pair-row input").forEach(function(inp){
-    inp.addEventListener("input",function(e){
-      var p=pairById(state,e.target.dataset.pid);
-      if(p){p[e.target.dataset.f]=e.target.value;markDirty();
-        // actualizar contador sin rerender
+});
+$("v-inscripcion").addEventListener("change", async event => {
+  if (event.target.id !== "roster-file" || !event.target.files.length) return;
+  try {
+    const file = JSON.parse(await event.target.files[0].text());
+    if (categoryNames.some(name => state.categories[name].pairs.length) && !confirm("¿Reemplazar las tres listas de inscripción?")) return;
+    importPairs(state, file); markDirty(); render(); toast("✓ Se han cargado las 31 parejas. Puedes revisar sus nombres.");
+  } catch (error) { toast(error.message, 6000); }
+});
+document.querySelector("main").addEventListener("click", event => {
+  const button = event.target.closest("button");
+  if (!button || !state) return;
+  const division = state.categories[category];
+  try {
+    if (button.id === "btn-add-pair") {
+      division.pairs.push({id: "p" + crypto.randomUUID(), p1:"", p2:""});
+    } else if (button.dataset.del) {
+      if (!confirm("¿Quitar esta pareja de la inscripción?")) return;
+      division.pairs = division.pairs.filter(pair => pair.id !== button.dataset.del);
+    } else if (button.id === "btn-draw") {
+      if (division.groups && !confirm("¿Volver a sortear " + category + " y borrar sus resultados y puestos?")) return;
+      drawDivision(division, category);
+      activeTab = "clasificados";
+    } else if (button.dataset.confirm) {
+      confirmGroup(division, category, button.dataset.confirm);
+    } else if (button.dataset.save) {
+      const fields = button.closest("[data-match]").querySelectorAll("[data-set]");
+      const sets = [];
+      for (const field of fields) {
+        if (!field.validity.valid) throw Error("Introduce puntos enteros de 0 a 21.");
+        const i = Number(field.dataset.set);
+        if (!sets[i]) sets[i] = emptyScoreSet();
+        sets[i][field.dataset.field] = field.value.trim();
       }
-    });
-  });
-  el.querySelectorAll(".pair-del").forEach(function(b){
-    b.addEventListener("click",function(e){
-      var id=e.target.dataset.del;
-      var p=pairById(state,id);
-      if(!confirm("¿Eliminar la pareja "+pairName(p)+"?"))return;
-      if(!guardEditPairs())return;
-      state.pairs=state.pairs.filter(function(x){return x.id!==id;});
-      markDirty();render();
-    });
-  });
-  $("btn-add-pair").addEventListener("click",function(){
-    if(!guardEditPairs())return;
-    state.pairs.push({id:newPairId(),p1:"",p2:""});
-    markDirty();render();
-    var rows=el.querySelectorAll(".pair-row input");
-    if(rows.length)rows[rows.length-2].focus();
-  });
-  $("btn-draw").addEventListener("click",doDrawGroups);
-  $("est-courts").addEventListener("input",function(e){
-    var v=e.target.value.replace(/\D/g,"").slice(0,2);e.target.value=v;
-    if(v&&Number(v)>=1){state.meta.courts=Number(v);markDirty();var ic=$("in-courts");if(ic)ic.value=v;fillEstTable();}
-  });
-  $("est-slot").addEventListener("input",function(e){
-    var v=e.target.value.replace(/\D/g,"").slice(0,3);e.target.value=v;
-    if(v&&Number(v)>=1){estParams.slot=Number(v);fillEstTable();}
-  });
-  $("est-inter").addEventListener("input",function(e){
-    var v=e.target.value.replace(/\D/g,"").slice(0,3);e.target.value=v;
-    if(v!==""){estParams.inter=Number(v);fillEstTable();}
-  });
-}
+      const result = withScore(division, category, button.dataset.save, sets);
+      if (result.removed.length && !confirm("Cambian los rivales. ¿Anular estos marcadores: " + result.removed.join(", ") + "?")) return;
+      state.categories[category] = result.next;
+      toast("✓ Marcador guardado. Recuerda publicar.");
+    } else return;
+    markDirty(); render();
+  } catch (error) { toast(error.message, 6000); }
+});
 
-function fillEstTable(){
-  var body=$("est-body");if(!body)return;
-  var cur=state.pairs.length;
-  var h="";
-  for(var P=10;P<=25;P++){
-    var e=estimateTournament(P,courts(),estParams.slot,estParams.inter);
-    if(!e)continue;
-    h+='<tr'+(P===cur?' class="est-now"':'')+'><td>'+P+(P===cur?' ◀ actual':'')+'</td><td>'+e.sizes.join(" + ")+'</td><td>'
-      +(e.minPerPair===e.maxPerPair?e.minPerPair:e.minPerPair+"–"+e.maxPerPair)+'</td><td>'+e.totalMatches+'</td><td>'
-      +e.groupTandas+' + '+e.koSlotUnits+'*</td><td>'+fmtDuration(e.minutes)+'</td></tr>';
+function buildSummary() {
+  const lines = [state.meta.title];
+  for (const name of categoryNames) {
+    const division = state.categories[name];
+    lines.push("", name + " · " + division.pairs.length + " parejas");
+    if (!division.groups) { lines.push(...division.pairs.map(pairName)); continue; }
+    const view = competition(division, name);
+    for (const [group, table] of Object.entries(view.tables)) {
+      lines.push("Grupo " + group);
+      table.rows.forEach((row, i) => lines.push((i+1) + ". " + pairName(row.pair) + " · " + row.w + " PG"));
+    }
+    for (const game of view.matches.values()) {
+      if (!isGroup(game.match) && game.winner) lines.push(game.match.id + " " + game.match.stage + ": " +
+        pairName(game.a) + " / " + pairName(game.b) + " · " + formatMatchScore(game.score, matchRules(game.match)));
+    }
   }
-  body.innerHTML=h;
+  state.raffle.winners.forEach(w => lines.push("🎁 " + w.name + (w.prize ? " — " + w.prize : "")));
+  return lines.join("\n");
 }
-
-/* ══════════ RENDER: RESULTADOS ══════════ */
-function standingsTableHTML(g,q){
-  var zm=groupStageComplete(state)?zoneMap(q):{};
-  var ZONE={main:{c:"#B8933A",l:"ORO"},cons:{c:"#9BA3AE",l:"CONSOLACIÓN"},out:{c:"transparent",l:""}};
-  var h='<div class="tbl-wrap"><table class="tbl"><thead><tr><th></th><th style="text-align:left">Pareja</th><th>PJ</th><th>PG</th><th>PP</th><th>PF</th><th>PC</th><th>DIF</th></tr></thead><tbody>';
-  q.standings[g].forEach(function(t,pos){
-    var z=ZONE[zm[t.id]||"out"];
-    h+='<tr><td><span class="pos" style="border-left:3px solid '+z.c+'">'+(pos+1)+'</span></td>'
-      +'<td><div class="team-name">'+escHtml(t.name)+'</div>'+(z.l?'<div class="zone" style="color:'+z.c+'">'+z.l+'</div>':'')+'</td>'
-      +'<td>'+t.pj+'</td><td class="num-strong">'+t.w+'</td><td>'+t.l+'</td><td>'+t.pf+'</td><td>'+t.pc+'</td><td class="num-strong">'+fmtDiff(t.diff)+'</td></tr>';
-  });
-  return h+'</tbody></table></div>';
-}
-
-function matchRowHTML(mm,withCourt){
-  var grp=state.groups[mm.g];
-  var pa=pairName(pairById(state,grp[mm.i])),pb=pairName(pairById(state,grp[mm.j]));
-  var res=state.results[mm.key]||{s1:"",s2:""};
-  var done=isPlayed(res);
-  var aWin=done&&Number(res.s1)>Number(res.s2);
-  return '<div class="match" data-key="'+mm.key+'">'
-    +(withCourt?'<span class="pista-chip">PISTA '+mm.court+'</span><span class="g-chip">Grupo '+GROUP_LETTERS[mm.g]+' · J'+(mm.r+1)+'</span>':'')
-    +'<span class="m-team ta'+(done&&aWin?' m-win':'')+'">'+escHtml(pa)+'</span>'
-    +'<input class="score-in" data-key="'+mm.key+'" data-f="s1" value="'+escHtml(res.s1)+'" inputmode="numeric" placeholder="–">'
-    +'<span class="m-dash">·</span>'
-    +'<input class="score-in" data-key="'+mm.key+'" data-f="s2" value="'+escHtml(res.s2)+'" inputmode="numeric" placeholder="–">'
-    +'<span class="m-team m-right tb'+(done&&!aWin?' m-win':'')+'">'+escHtml(pb)+'</span></div>';
-}
-
-function refreshMatchRow(rowEl,key){
-  var res=state.results[key]||{s1:"",s2:""};
-  var done=isPlayed(res);
-  var aWin=done&&Number(res.s1)>Number(res.s2);
-  rowEl.querySelector(".ta").classList.toggle("m-win",done&&aWin);
-  rowEl.querySelector(".tb").classList.toggle("m-win",done&&!aWin);
-}
-
-function bindScoreInputs(container,onAfter){
-  container.querySelectorAll(".score-in[data-key]").forEach(function(inp){
-    inp.addEventListener("change",function(e){
-      var key=e.target.dataset.key,f=e.target.dataset.f;
-      var prev=(state.results[key]||{s1:"",s2:""})[f];
-      if(!setResult(key,f,e.target.value)){e.target.value=prev;toast(lastScoreError,4200);return;}
-      refreshMatchRow(e.target.closest(".match"),key);
-      if(onAfter)onAfter();
-    });
-  });
-}
-
-function renderResultados(){
-  var el=$("v-resultados");
-  if(!state.groups){
-    el.innerHTML='<div class="panel"><div class="empty">Primero sortea los grupos en la pestaña Inscripción.</div></div>';
-    return;
-  }
-  var chips='<div class="chips"><button class="chip'+(activeChip==="tandas"?' chip-on':'')+'" data-chip="tandas" style="font-size:12px;font-family:Archivo;font-weight:700">POR TANDAS</button>';
-  state.groups.forEach(function(_,g){
-    chips+='<button class="chip'+(activeChip===String(g)?' chip-on':'')+'" data-chip="'+g+'">'+GROUP_LETTERS[g]+'</button>';
-  });
-  chips+='</div>';
-  var h=chips+'<div class="hint" style="padding:0 2px 12px">Fase de grupos: 1 set a 15 puntos, con 2 puntos de diferencia y sin límite de puntuación.</div>';
-
-  if(activeChip==="tandas"){
-    var tandas=buildTandas(sizes(),courts());
-    tandas.forEach(function(t,ti){
-      var played=t.filter(function(mm){return isPlayed(state.results[mm.key]);}).length;
-      h+='<div class="panel"><div class="panel-head">Tanda '+(ti+1)+'<span class="rest" data-tcount="'+ti+'">'+played+' / '+t.length+' partidos</span></div>';
-      t.forEach(function(mm){h+=matchRowHTML(mm,true);});
-      h+='</div>';
-    });
-    el.innerHTML=h;
-    bindScoreInputs(el,function(){
-      tandas.forEach(function(t,ti){
-        var played=t.filter(function(mm){return isPlayed(state.results[mm.key]);}).length;
-        var s=el.querySelector('[data-tcount="'+ti+'"]');
-        if(s)s.textContent=played+" / "+t.length+" partidos";
-      });
-    });
-  }else{
-    var g=Number(activeChip);
-    var q=computeQualification(state);
-    var n=state.groups[g].length;
-    h+='<div class="panel"><div class="panel-head">Clasificación · Grupo '+GROUP_LETTERS[g]+'<span class="rest">'+n+' parejas</span></div><div id="standings-box">'+standingsTableHTML(g,q)+'</div></div>';
-    scheduleFor(n).forEach(function(round,r){
-      h+='<div class="panel"><div class="panel-head">Jornada '+(r+1);
-      if(round.rest!=null)h+='<span class="rest">descansa '+escHtml(pairName(pairById(state,state.groups[g][round.rest])))+'</span>';
-      h+='</div>';
-      round.pairs.forEach(function(pr,m){
-        h+=matchRowHTML({g:g,r:r,m:m,i:pr[0],j:pr[1],key:g+"-"+r+"-"+m},false);
-      });
-      h+='</div>';
-    });
-    el.innerHTML=h;
-    bindScoreInputs(el,function(){
-      var q2=computeQualification(state);
-      var box=el.querySelector("#standings-box");
-      if(box)box.innerHTML=standingsTableHTML(g,q2);
-    });
-  }
-  el.querySelectorAll(".chip").forEach(function(c){
-    c.addEventListener("click",function(){activeChip=c.dataset.chip;renderResultados();});
-  });
-}
-
-/* ══════════ RENDER: CLASIFICADOS ══════════ */
-function posLabel(t){
-  return (t.pos+1)+"º grupo "+t.letter;
-}
-function renderClasificados(){
-  var el=$("v-clasificados");
-  if(!state.groups){
-    el.innerHTML='<div class="panel"><div class="empty">Primero sortea los grupos en la pestaña Inscripción.</div></div>';
-    return;
-  }
-  var q=computeQualification(state);
-  var totalM=groupMatchList(state).length;
-  var played=playedCount(state);
-  var complete=groupStageComplete(state);
-  var h='<div class="panel"><div class="panel-head gold">Grupo Oro · 8 parejas'+(!complete?'<span class="rest">clasificación provisional</span>':'')+'</div>';
-  q.main.forEach(function(t,i){
-    h+='<div class="qual-row"><span class="seed">'+(i+1)+'</span><span class="q-name">'+escHtml(t.name)
-      +'</span><span class="q-meta">'+posLabel(t)+' · '+t.w+'V-'+t.l+'D · '+fmtDiff(t.diff)+'</span></div>';
-  });
-  h+='</div><div class="panel"><div class="panel-head silver">Grupo Consolación · '+q.cons.length+' parejas'+(!complete?'<span class="rest">clasificación provisional</span>':'')
-    +(q.cons.length<8?'<span class="rest">'+(8-q.cons.length)+' pase(s) directo(s) para los mejores</span>':'')+'</div>';
-  q.cons.forEach(function(t,i){
-    h+='<div class="qual-row"><span class="seed seed-s">'+(i+1)+'</span><span class="q-name">'+escHtml(t.name)
-      +'</span><span class="q-meta">'+posLabel(t)+' · '+t.w+'V-'+t.l+'D · '+fmtDiff(t.diff)+'</span></div>';
-  });
-  h+='<div class="hint">Criterio: posición en el grupo; entre grupos, % de victorias → diferencia media de puntos → puntos a favor. Dentro de cada grupo, el empate a victorias se resuelve por el enfrentamiento directo.</div></div>';
-
-  h+='<div class="gen-box"><div class="progress-line"><div class="progress-bar" style="width:'+(totalM?played/totalM*100:0)+'%"></div></div>'
-    +'<div class="progress-txt">'+played+' / '+totalM+' partidos de grupo</div>';
-  if(!complete){
-    h+='<div class="hint" style="text-align:center;color:var(--gold)">Los cuadros se habilitarán automáticamente cuando estén completados y validados todos los partidos de grupos.</div>';
-  }else if(!state.bracket){
-    h+='<button class="btn-gold btn" id="btn-gen">Generar cuadros</button>';
-  }else if(confirmRegen){
-    h+='<div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap">'
-      +'<button class="btn btn-danger" id="btn-gen-yes">Sí, regenerar y borrar resultados de cuadros</button>'
-      +'<button class="btn" id="btn-gen-no">Cancelar</button></div>';
-  }else{
-    h+='<button class="btn-gold btn" id="btn-gen-ask">Regenerar cuadros</button>'
-      +'<div class="hint" style="text-align:center">Regenerar recalcula los emparejamientos y borra los resultados ya anotados en los cuadros.</div>';
-  }
-  h+='</div>';
-  el.innerHTML=h;
-  var gen=$("btn-gen");if(gen)gen.addEventListener("click",generateBrackets);
-  var ask=$("btn-gen-ask");if(ask)ask.addEventListener("click",function(){confirmRegen=true;renderClasificados();});
-  var yes=$("btn-gen-yes");if(yes)yes.addEventListener("click",generateBrackets);
-  var no=$("btn-gen-no");if(no)no.addEventListener("click",function(){confirmRegen=false;renderClasificados();});
-}
-
-/* ══════════ RENDER: CUADROS ══════════ */
-function bkMatchEditHTML(draw,round,idx,a,b,label){
-  var m=state.bracket[draw][round][idx];
-  var format=matchFormat(draw,round);
-  migrateBracketMatch(m,format);
-  var bye=(a&&!b)||(!a&&b);
-  var valid=a&&b&&m.aId===a.id&&m.bId===b.id;
-  var shown={sets:valid?normalizedMatchSets(m,format):format.targets.map(function(){return emptyScoreSet();}),aId:a&&a.id,bId:b&&b.id};
-  var w=bye?(a||b):((a&&b)?winnerOf(m,a,b,format):null);
-  var head='<div class="bk-set-head"><span></span>'+format.targets.map(function(target,i){return '<span class="bk-set-col">S'+(i+1)+' · '+target+'</span>';}).join('')+'</div>';
-  var row=function(t,field){
-    var name=t?escHtml(t.name):(bye?'<span class="bk-bye">— pase directo —</span>':'Por definir');
-    var cells=format.targets.map(function(_,setIdx){
-      var enabled=a&&b&&scoreSetIsEnabled(shown,format,setIdx);
-      var disabled=enabled?'':' disabled';
-      return '<input class="score-in bk-in" data-draw="'+draw+'" data-round="'+round+'" data-idx="'+idx+'" data-set="'+setIdx+'" data-f="'+field+'"'
-        +' data-aid="'+(a?a.id:'')+'" data-bid="'+(b?b.id:'')+'" value="'+escHtml(shown.sets[setIdx][field])+'" inputmode="numeric" placeholder="–"'+disabled+'>';
-    }).join('');
-    return '<div class="bk-row'+(w&&t&&w.id===t.id?' bk-win':'')+'">'
-      +'<span class="bk-name">'+name+'</span>'
-      +'<span class="bk-score-cells">'+cells+'</span></div>';
-  };
-  return '<div class="bk-match"><div class="bk-label">'+label+'</div><div class="bk-rule">'+escHtml(formatRuleText(format))+'</div>'+head+row(a,"s1")+row(b,"s2")+'</div>';
-}
-
-function renderCuadros(){
-  var el=$("v-cuadros");
-  if(!state.bracket){
-    el.innerHTML='<div class="panel"><div class="empty"><div style="margin-bottom:16px">Los cuadros se generan desde la pestaña Clasificados.</div>'
-      +(state.groups&&groupStageComplete(state)?'<button class="btn-gold btn" id="btn-gen2">Generar cuadros ahora</button>':'<div class="hint">Primero deben completarse todos los partidos de grupos.</div>')+'</div></div>';
-    var g2=$("btn-gen2");if(g2)g2.addEventListener("click",generateBrackets);
-    return;
-  }
-  if(migrateTournamentState(state))markDirty();
-  var draw=function(d,title,accent,headClass){
-    var br=state.bracket[d];
-    var dd=bracketDerived(br,d);
-    var h='<div class="panel"><div class="panel-head '+headClass+'">'+title+'</div><div class="bk-cols">';
-    h+='<div class="bk-col"><div class="bk-round">Cuartos</div>'+br.qf.map(function(m,i){return bkMatchEditHTML(d,"qf",i,m.a,m.b,"QF"+(i+1));}).join('')+'</div>';
-    h+='<div class="bk-col"><div class="bk-round">Semifinales</div>'+dd.sfPairs.map(function(p,i){return bkMatchEditHTML(d,"sf",i,p[0],p[1],"SF"+(i+1));}).join('')+'</div>';
-    h+='<div class="bk-col"><div class="bk-round">Final y podio</div>'+bkMatchEditHTML(d,"f",0,dd.sfW[0],dd.sfW[1],"FINAL")
-      +bkMatchEditHTML(d,"third",0,dd.sfL[0],dd.sfL[1],"3.º / 4.º PUESTO");
-    if(dd.champ)h+='<div class="champ-card" style="border-color:'+accent+'"><div class="k">Campeón</div><div class="n" style="color:'+accent+'">'+escHtml(dd.champ.name)+'</div></div>';
-    if(dd.thirdPlace)h+='<div class="champ-card" style="border-color:'+accent+'"><div class="k">3.º puesto</div><div class="n" style="color:'+accent+'">'+escHtml(dd.thirdPlace.name)+'</div></div>'
-      +'<div class="champ-card" style="border-color:var(--line)"><div class="k">4.º puesto</div><div class="n" style="color:var(--mut)">'+escHtml(dd.fourthPlace.name)+'</div></div>';
-    h+='</div></div></div>';
-    return h;
-  };
-  el.innerHTML=draw("main","Grupo Oro","#B8933A","gold")+draw("cons","Grupo Consolación","#9BA3AE","silver")
-    +'<div class="hint" style="text-align:center">Oro: cuartos a un set de 15; semifinales, final y 3.º/4.º al mejor de 3. Consolación: todos los partidos a un set de 15. Todos los sets se ganan por 2 y no tienen límite de puntuación.</div>';
-  el.querySelectorAll(".bk-in").forEach(function(inp){
-    inp.addEventListener("change",function(e){
-      var d=e.target.dataset;
-      var m=state.bracket[d.draw][d.round][Number(d.idx)];
-      var sets=normalizedMatchSets(m,matchFormat(d.draw,d.round));
-      var cur=sets[Number(d.set)][d.f];
-      if(!setBracketScore(d.draw,d.round,Number(d.idx),Number(d.set),d.f,e.target.value,d.aid||null,d.bid||null)){
-        e.target.value=cur;
-        toast(lastScoreError,4200);
-      }
-      renderCuadros();
-    });
-  });
-}
-
-/* ══════════ RENDER: SORTEO ══════════ */
 function renderSorteo(){
   var el=$("v-sorteo");
-  var pool=rafflePool(state);
+  var pool=registeredPlayers(state).filter(name => !state.raffle.winners.some(w => w.name === name));
   var winners=state.raffle.winners;
-  var totalPlayers=state.pairs.reduce(function(n,p){return n+((p.p1||"").trim()?1:0)+((p.p2||"").trim()?1:0);},0);
+  var totalPlayers=registeredPlayers(state).length;
   var h='<div class="panel"><div class="panel-head gold">Sorteo entre jugadores'
     +'<span class="rest">'+pool.length+' participan · '+winners.length+' ya premiados · '+totalPlayers+' jugadores en total</span></div>'
     +'<div class="meta-row"><div style="flex:1;min-width:220px"><label>Premio que se sortea</label>'
@@ -770,7 +453,7 @@ function renderSorteo(){
 
 function runRaffle(){
   if(raffleBusy)return;
-  var pool=rafflePool(state);
+  var pool=registeredPlayers(state).filter(name => !state.raffle.winners.some(w => w.name === name));
   if(!pool.length){toast("No quedan jugadores sin premio.");return;}
   var prize=($("raffle-prize").value||"").trim();
   var display=$("raffle-display");
@@ -805,90 +488,8 @@ function runRaffle(){
   },2400);
 }
 
-/* ══════════ TABS / RENDER GLOBAL ══════════ */
-function render(){
-  if(activeTab==="inscripcion")renderInscripcion();
-  if(activeTab==="resultados")renderResultados();
-  if(activeTab==="clasificados")renderClasificados();
-  if(activeTab==="cuadros")renderCuadros();
-  if(activeTab==="sorteo")renderSorteo();
-  ["inscripcion","resultados","clasificados","cuadros","sorteo"].forEach(function(k){
-    $("v-"+k).style.display=k===activeTab?"":"none";
-  });
-}
-function syncTabs(){
-  document.querySelectorAll("#tabs .tab").forEach(function(t){t.classList.toggle("tab-on",t.dataset.tab===activeTab);});
-}
-$("tabs").addEventListener("click",function(e){
-  var b=e.target.closest(".tab");if(!b)return;
-  activeTab=b.dataset.tab;confirmRegen=false;syncTabs();render();
-});
-
-/* ══════════ RESUMEN PARA WHATSAPP ══════════ */
-function buildSummary(){
-  var out="🏓 "+(state.meta.title||"TORNEO")+"\n";
-  if(!state.groups){
-    out+="Inscripción: "+state.pairs.length+" parejas\n";
-    state.pairs.forEach(function(p,i){out+=(i+1)+". "+pairName(p)+"\n";});
-  }else{
-    var q=computeQualification(state);
-    out+=playedCount(state)+"/"+groupMatchList(state).length+" partidos de grupo jugados\n";
-    state.groups.forEach(function(_,g){
-      out+="\nGRUPO "+GROUP_LETTERS[g]+"\n";
-      q.standings[g].forEach(function(t,i){
-        out+=(i+1)+". "+t.name+" · "+t.w+"V-"+t.l+"D ("+fmtDiff(t.diff)+")\n";
-      });
-    });
-    if(state.bracket){
-      var part=function(d,title){
-        var br=state.bracket[d];
-        var dd=bracketDerived(br,d);
-        var o="\n"+title+"\n";var any=false;
-        var completed=function(m,a,b,round){
-          var format=matchFormat(d,round);
-          return a&&b&&winnerOf(m,a,b,format)?formatMatchScore(m,format):"";
-        };
-        br.qf.forEach(function(m,i){
-          var score=completed(m,m.a,m.b,"qf");
-          if(score){
-            o+="Cuartos "+(i+1)+": "+m.a.name+" "+score+" "+m.b.name+"\n";any=true;
-          }else if((m.a&&!m.b)||(!m.a&&m.b)){
-            o+="Cuartos "+(i+1)+": "+(m.a||m.b).name+" — pase directo\n";any=true;
-          }
-        });
-        dd.sfPairs.forEach(function(p,i){
-          var m=br.sf[i];
-          var score=completed(m,p[0],p[1],"sf");
-          if(score){
-            o+="Semifinal "+(i+1)+": "+p[0].name+" "+score+" "+p[1].name+"\n";any=true;
-          }
-        });
-        var f=br.f[0];
-        var finalScore=completed(f,dd.sfW[0],dd.sfW[1],"f");
-        if(finalScore){
-          o+="FINAL: "+dd.sfW[0].name+" "+finalScore+" "+dd.sfW[1].name+"\n";any=true;
-        }
-        var third=br.third&&br.third[0];
-        var thirdScore=third?completed(third,dd.sfL[0],dd.sfL[1],"third"):"";
-        if(thirdScore){
-          o+="3.º/4.º: "+dd.sfL[0].name+" "+thirdScore+" "+dd.sfL[1].name+"\n";any=true;
-        }
-        if(dd.champ)o+="🏆 Campeón: "+dd.champ.name+"\n";
-        if(dd.thirdPlace)o+="🥉 3.º puesto: "+dd.thirdPlace.name+"\n4.º puesto: "+dd.fourthPlace.name+"\n";
-        return (any||dd.champ)?o:"";
-      };
-      out+=part("main","GRUPO ORO")+part("cons","GRUPO CONSOLACIÓN");
-    }
-  }
-  if(state.raffle.winners.length){
-    out+="\nSORTEOS\n";
-    state.raffle.winners.forEach(function(w){
-      out+="🎁 "+w.name+(w.prize?" — "+w.prize:"")+"\n";
-    });
-  }
-  return out;
-}
 $("btn-copy").addEventListener("click",function(){
+  if (!state) return;
   var text=buildSummary();
   var done=function(){toast("✓ Resumen copiado. Pégalo en WhatsApp.");};
   if(navigator.clipboard&&navigator.clipboard.writeText){
@@ -942,7 +543,15 @@ $("btn-pub").addEventListener("click",publish);
 $("btn-load").addEventListener("click",loadPublished);
 updateStatus();
 if(!getCfg())showCfg(true);
-render();
+try {
+  const saved = JSON.parse(localStorage.getItem(LS_STATE));
+  if (saved && saved.baseline) {
+    checkEvent(JSON.parse(saved.baseline));
+    state = checkEvent(saved.state); dirty = saved.dirty; baseline = saved.baseline;
+  }
+} catch (error) { state = null; }
+if (state && dirty) { render(); updateStatus(); }
+else { if (state) render(); loadPublished(); }
 </script>
 </body>
 </html>

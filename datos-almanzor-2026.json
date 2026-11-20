@@ -1,0 +1,33 @@
+{
+  "eventId": "almanzor-2026-11-21",
+  "meta": {
+    "title": "Torneo BÜRK Almanzor",
+    "venue": "Pickleball Almanzor",
+    "date": "2026-11-21",
+    "courts": 7,
+    "updatedAt": null
+  },
+  "categories": {
+    "Mixto": {
+      "pairs": [],
+      "groups": null,
+      "results": {},
+      "confirmed": {}
+    },
+    "Masculino": {
+      "pairs": [],
+      "groups": null,
+      "results": {},
+      "confirmed": {}
+    },
+    "Femenino": {
+      "pairs": [],
+      "groups": null,
+      "results": {},
+      "confirmed": {}
+    }
+  },
+  "raffle": {
+    "winners": []
+  }
+}

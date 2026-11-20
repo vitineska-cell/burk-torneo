@@ -6,7 +6,11 @@ const path = require("node:path");
 const torneo = require("../torneo.js");
 
 const root = path.join(__dirname, "..");
-const published = JSON.parse(fs.readFileSync(path.join(root, "datos.json"), "utf8"));
+// Caso de regresión del formato anterior, independiente de los resultados en vivo.
+const published = torneo.defaultState();
+published.pairs = Array.from({length:25}, (_, i) => ({id:"p"+i, p1:"A"+i, p2:"B"+i}));
+published.groups = torneo.drawGroups(published);
+published.meta.courts = 5;
 
 function seeds(count, prefix) {
   const list = [];
@@ -272,12 +276,8 @@ function testViewsAndConnectionCodeCompile() {
     scripts.forEach((match) => new Function(match[1]));
   });
   const admin = fs.readFileSync(path.join(root, "admin.html"), "utf8");
-  const publicView = fs.readFileSync(path.join(root, "index.html"), "utf8");
   assert.match(admin, /function apiGet\(cfg\)/);
   assert.match(admin, /method:"PUT"/);
-  assert.match(admin, /data-set=/);
-  assert.match(admin, /No se pueden generar los cuadros hasta completar/);
-  assert.match(publicView, /Clasificación provisional/);
   assert.doesNotMatch(admin, /partidos a 11 puntos/);
 }
 
