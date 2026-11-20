@@ -96,7 +96,7 @@ main{padding-top:16px}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 </head>
-<body>
+<body data-almanzor>
 <div class="wrap">
   <header class="hdr">
     <div class="hdr-top">
@@ -117,6 +117,7 @@ main{padding-top:16px}
 
   <div class="err" id="err">No se han podido cargar los datos del torneo. Reintentando…</div>
 
+  <nav class="tabs" id="categories" aria-label="Modalidad"></nav>
   <nav class="tabs" id="tabs">
     <button class="tab tab-on" data-tab="clas">Clasificación</button>
     <button class="tab" data-tab="horario">Horario</button>
@@ -135,121 +136,24 @@ main{padding-top:16px}
 </div>
 
 <script src="torneo.js"></script>
+<script src="calendario-almanzor.js"></script>
+<script src="almanzor.js"></script>
+<script src="vistas-almanzor.js"></script>
 <script>
-var DATA=null, QUAL=null;
-var ZONE={main:{c:"#B8933A",l:"ORO"},cons:{c:"#9BA3AE",l:"CONSOLACIÓN"},out:{c:"transparent",l:""}};
-var $=function(id){return document.getElementById(id);};
-
-function courts(){return DATA.meta&&DATA.meta.courts?Number(DATA.meta.courts)||5:5;}
-function sizes(){return DATA.groups.map(function(g){return g.length;});}
-
-function renderInscription(el,titulo){
-  var h='<div class="panel"><div class="panel-head">'+titulo+'<span class="rest">'+DATA.pairs.length+' parejas inscritas</span></div>';
-  if(!DATA.pairs.length){
+var DATA = null, category = "Mixto";
+var $ = id => document.getElementById(id);
+function renderInscription(el,titulo,division){
+  var h='<div class="panel"><div class="panel-head">'+titulo+'<span class="rest">'+division.pairs.length+' parejas inscritas</span></div>';
+  if(!division.pairs.length){
     h+='<div class="empty">La inscripción está en marcha. ¡Vuelve pronto!</div></div>';
   }else{
     h+='<div class="insc-grid">';
-    DATA.pairs.forEach(function(p,i){
+    division.pairs.forEach(function(p,i){
       h+='<div class="insc-item"><span class="n">'+(i+1)+'</span>'+escHtml(pairName(p))+'</div>';
     });
     h+='</div><div class="hint">Los grupos se sortearán al cierre de la inscripción.</div></div>';
   }
   el.innerHTML=h;
-}
-
-function renderClas(){
-  var el=$("v-clas");
-  if(!DATA.groups){renderInscription(el,"Inscripción en curso");return;}
-  var complete=groupStageComplete(DATA);
-  var zm=complete?zoneMap(QUAL):{};
-  var h='<div class="groups-grid">';
-  DATA.groups.forEach(function(_,g){
-    h+='<div class="panel"><div class="panel-head">Grupo '+GROUP_LETTERS[g]+'<span class="rest">'+DATA.groups[g].length+' parejas</span></div><div class="tbl-wrap"><table class="tbl"><thead><tr><th></th><th style="text-align:left">Pareja</th><th>PJ</th><th>PG</th><th>PP</th><th>DIF</th></tr></thead><tbody>';
-    QUAL.standings[g].forEach(function(t,pos){
-      var z=ZONE[zm[t.id]||"out"];
-      h+='<tr><td><span class="pos" style="border-left:3px solid '+z.c+'">'+(pos+1)+'</span></td>'
-        +'<td><div class="team-name">'+escHtml(t.name)+'</div>'+(z.l?'<div class="zone" style="color:'+z.c+'">'+z.l+'</div>':'')+'</td>'
-        +'<td>'+t.pj+'</td><td class="num-strong">'+t.w+'</td><td>'+t.l+'</td><td class="num-strong">'+fmtDiff(t.diff)+'</td></tr>';
-    });
-    h+='</tbody></table></div></div>';
-  });
-  var exactFormat=DATA.pairs.length===25&&DATA.groups.length===5&&DATA.groups.every(function(group){return group.length===5;});
-  var finalRule=exactFormat
-    ?'Clasificación final: Grupo Oro = los 5 primeros y los 3 mejores segundos. Consolación = los 2 segundos restantes, los 5 terceros y el mejor cuarto.'
-    :'Clasificación final: las 8 primeras parejas del orden por posiciones pasan a Oro y las 8 siguientes a Consolación.';
-  h+='</div><div class="hint">'+(complete?finalRule:'Clasificación provisional. Las zonas Oro y Consolación aparecerán cuando terminen los '+groupMatchList(DATA).length+' partidos de grupos.')+'</div>';
-  el.innerHTML=h;
-}
-
-function renderHorario(){
-  var el=$("v-horario");
-  if(!DATA.groups){el.innerHTML='<div class="panel"><div class="empty">El horario se publicará tras el sorteo de grupos.</div></div>';return;}
-  var tandas=buildTandas(sizes(),courts());
-  var h='<div class="hint" style="padding:0 2px 12px">Los partidos se juegan por tandas: todas las pistas a la vez. Una pareja nunca juega dos partidos en la misma tanda.</div>';
-  tandas.forEach(function(t,ti){
-    var played=0;
-    t.forEach(function(mm){if(isPlayed(DATA.results[mm.key]))played++;});
-    h+='<div class="panel"><div class="panel-head">Tanda '+(ti+1)+'<span class="rest">'+played+' / '+t.length+' partidos</span></div>';
-    t.forEach(function(mm){
-      var grp=DATA.groups[mm.g];
-      var pa=pairName(pairById(DATA,grp[mm.i])),pb=pairName(pairById(DATA,grp[mm.j]));
-      var res=DATA.results[mm.key],done=isPlayed(res);
-      var aWin=done&&Number(res.s1)>Number(res.s2);
-      h+='<div class="match"><span class="pista-chip">PISTA '+mm.court+'</span><span class="g-chip">Grupo '+GROUP_LETTERS[mm.g]+' · J'+(mm.r+1)+'</span>'
-        +'<span class="m-team'+(done&&aWin?' m-win':'')+'">'+escHtml(pa)+'</span>'
-        +(done?'<span class="m-score">'+escHtml(res.s1)+' – '+escHtml(res.s2)+'</span>':'<span class="m-score m-pend">por jugar</span>')
-        +'<span class="m-team m-right'+(done&&!aWin?' m-win':'')+'">'+escHtml(pb)+'</span></div>';
-    });
-    h+='</div>';
-  });
-  el.innerHTML=h;
-}
-
-function bkMatchHTML(draw,round,m,a,b,label){
-  var format=matchFormat(draw,round);
-  migrateBracketMatch(m,format);
-  var bye=(a&&!b)||(!a&&b);
-  var valid=a&&b&&m&&m.aId===a.id&&m.bId===b.id;
-  var sets=valid?normalizedMatchSets(m,format):format.targets.map(function(){return emptyScoreSet();});
-  var w=bye?(a||b):((a&&b&&m)?winnerOf(m,a,b,format):null);
-  var head='<div class="bk-set-head"><span></span>'+format.targets.map(function(target,i){return '<span class="bk-set-col">S'+(i+1)+' · '+target+'</span>';}).join('')+'</div>';
-  var row=function(t,field){
-    var name=t?escHtml(t.name):(bye?'<span class="bk-bye">— pase directo —</span>':'Por definir');
-    var scores=sets.map(function(set){var value=set[field];return '<span class="bk-score">'+(value!==""&&!bye?escHtml(value):'–')+'</span>';}).join('');
-    return '<div class="bk-row'+(w&&t&&w.id===t.id?' bk-win':'')+'"><span class="bk-name">'+name+'</span><span class="bk-score-cells">'+scores+'</span></div>';
-  };
-  return '<div class="bk-match"><div class="bk-label">'+label+'</div><div class="bk-rule">'+escHtml(formatRuleText(format))+'</div>'+head+row(a,"s1")+row(b,"s2")+'</div>';
-}
-
-function drawHTML(draw,title,accent,headClass){
-  var br=DATA.bracket[draw];
-  var d=bracketDerived(br,draw);
-  var h='<div class="panel"><div class="panel-head '+headClass+'">'+title+'</div><div class="bk-cols">';
-  h+='<div class="bk-col"><div class="bk-round">Cuartos</div>'+br.qf.map(function(m,i){return bkMatchHTML(draw,"qf",m,m.a,m.b,"QF"+(i+1));}).join('')+'</div>';
-  h+='<div class="bk-col"><div class="bk-round">Semifinales</div>'+d.sfPairs.map(function(p,i){return bkMatchHTML(draw,"sf",br.sf[i],p[0],p[1],"SF"+(i+1));}).join('')+'</div>';
-  h+='<div class="bk-col"><div class="bk-round">Final y podio</div>'+bkMatchHTML(draw,"f",br.f[0],d.sfW[0],d.sfW[1],"FINAL")
-    +bkMatchHTML(draw,"third",br.third[0],d.sfL[0],d.sfL[1],"3.º / 4.º PUESTO");
-  if(d.champ)h+='<div class="champ-card" style="border-color:'+accent+'"><div class="k">Campeón</div><div class="n" style="color:'+accent+'">'+escHtml(d.champ.name)+'</div></div>';
-  if(d.thirdPlace)h+='<div class="champ-card" style="border-color:'+accent+'"><div class="k">3.º puesto</div><div class="n" style="color:'+accent+'">'+escHtml(d.thirdPlace.name)+'</div></div>'
-    +'<div class="champ-card" style="border-color:var(--line)"><div class="k">4.º puesto</div><div class="n" style="color:var(--mut)">'+escHtml(d.fourthPlace.name)+'</div></div>';
-  h+='</div></div></div>';
-  return {html:h,champ:d.champ};
-}
-
-function renderCuadros(){
-  var el=$("v-cuadros");
-  if(!DATA.bracket){
-    el.innerHTML='<div class="panel"><div class="empty">Los cuadros finales se publicarán cuando termine la fase de grupos.</div></div>';
-    $("champ-banner").innerHTML="";
-    return;
-  }
-  migrateTournamentState(DATA);
-  var main=drawHTML("main","Grupo Oro","#B8933A","gold");
-  var cons=drawHTML("cons","Grupo Consolación","#9BA3AE","silver");
-  el.innerHTML=main.html+cons.html+'<div class="hint">Oro: cuartos a un set de 15; semifinales, final y 3.º/4.º al mejor de 3. Consolación: todos los partidos a un set de 15. Siempre hay que ganar por 2 y no existe límite de puntuación.</div>';
-  $("champ-banner").innerHTML=main.champ
-    ?'<div class="champ-banner"><div class="champ-k">🏆 Campeones del torneo</div><div class="champ-n">'+escHtml(main.champ.name)+'</div>'+(cons.champ?'<div class="champ-sub">Consolación: '+escHtml(cons.champ.name)+'</div>':'')+'</div>'
-    :"";
 }
 
 function renderSorteos(){
@@ -271,28 +175,38 @@ function renderSorteos(){
   el.innerHTML=h;
 }
 
-function renderAll(){
-  QUAL=DATA.groups?computeQualification(DATA):null;
-  var totalM=DATA.groups?groupMatchList(DATA).length:0;
-  var played=DATA.groups?playedCount(DATA):0;
-  $("pbar").style.width=(totalM?played/totalM*100:0)+"%";
-  $("ptxt").textContent=DATA.groups
-    ? "Fase de grupos: "+played+" / "+totalM+" partidos"
-    : "Inscripción: "+DATA.pairs.length+" parejas";
-  if(DATA.meta&&DATA.meta.title)$("title").textContent=DATA.meta.title.replace(/^B\u00dcRK\s*·\s*/i,"");
-  var t=DATA.meta&&DATA.meta.updatedAt?new Date(DATA.meta.updatedAt):null;
-  $("upd").textContent=t?"Actualizado a las "+t.toLocaleTimeString("es-ES",{hour:"2-digit",minute:"2-digit"}):"Esperando primeros datos";
-  renderClas();renderHorario();renderCuadros();renderSorteos();
+function renderAll() {
+  const division = DATA.categories[category];
+  const view = competition(division, category);
+  const finished = [...view.matches.values()].filter(game => game.winner).length;
+  $("categories").innerHTML = categoryNav(category);
+  $("title").textContent = DATA.meta.title;
+  $("pbar").style.width = (100 * finished / view.matches.size) + "%";
+  $("ptxt").textContent = "21/11/2026 · " + DATA.meta.venue + " · " + category + " · " +
+    (division.groups ? finished + " / " + view.matches.size + " partidos" : division.pairs.length + " parejas inscritas");
+  $("upd").textContent = DATA.meta.updatedAt ? "Actualizado a las " +
+    new Date(DATA.meta.updatedAt).toLocaleTimeString("es-ES", {timeZone:"Europe/Madrid", hour:"2-digit", minute:"2-digit"}) : "Inscripción abierta";
+  if (division.groups) $("v-clas").innerHTML = groupTables(view, false);
+  else renderInscription($("v-clas"), "Inscripción en curso", division);
+  $("v-horario").innerHTML = scheduleHTML(view, category, () => true, false);
+  $("v-cuadros").innerHTML = scheduleHTML(view, category, match => !isGroup(match), false);
+  const final = [...view.matches.values()].find(game => game.match.stage === "Final");
+  $("champ-banner").innerHTML = final.winner ? '<div class="champ-banner"><div class="champ-k">Campeones · ' +
+    category + '</div><div class="champ-n">' + escHtml(pairName(final.winner)) + '</div></div>' : "";
+  renderSorteos();
 }
 
+$("categories").addEventListener("click", event => {
+  const button = event.target.closest("[data-category]");
+  if (button && DATA) { category = button.dataset.category; renderAll(); }
+});
 function load(){
-  fetch("datos.json?ts="+Date.now(),{cache:"no-store"})
+  fetch(DATA_FILE+"?ts="+Date.now(),{cache:"no-store"})
     .then(function(r){if(!r.ok)throw new Error(r.status);return r.json();})
     .then(function(d){
-      if(!d||!d.pairs)throw new Error("formato");
-      migrateTournamentState(d);DATA=d;$("err").style.display="none";renderAll();
+      DATA=checkEvent(d);$("err").style.display="none";renderAll();
     })
-    .catch(function(){$("err").style.display=DATA?"none":"block";});
+    .catch(function(){$("err").style.display="block";});
 }
 load();
 setInterval(load,30000);

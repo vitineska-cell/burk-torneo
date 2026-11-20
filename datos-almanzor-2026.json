@@ -1,0 +1,191 @@
+{
+  "eventId": "almanzor-2026-11-21",
+  "meta": {
+    "title": "Torneo BÜRK Almanzor",
+    "venue": "Pickleball Almanzor",
+    "date": "2026-11-21",
+    "courts": 7,
+    "updatedAt": null
+  },
+  "categories": {
+    "Mixto": {
+      "pairs": [
+        {
+          "id": "MX01",
+          "p1": "Óscar García Heredero",
+          "p2": "Marta Hernando Álvarez"
+        },
+        {
+          "id": "MX02",
+          "p1": "Estefanía Gabarda Crespo",
+          "p2": "Joaquín Ansaldo Rosillo"
+        },
+        {
+          "id": "MX03",
+          "p1": "Laura Dávila Alcalá",
+          "p2": "Daniel Sebastián González"
+        },
+        {
+          "id": "MX04",
+          "p1": "Mario Raya Sampere",
+          "p2": "Amaya Garcia Ramos"
+        },
+        {
+          "id": "MX05",
+          "p1": "Laura Alvarez Piña",
+          "p2": "David Jiménez Álvarez"
+        },
+        {
+          "id": "MX06",
+          "p1": "Aldara Aguilera",
+          "p2": "Hugo Granados Jiménez"
+        },
+        {
+          "id": "MX07",
+          "p1": "Cristina Almirall",
+          "p2": "José María Bravo Balmori"
+        },
+        {
+          "id": "MX08",
+          "p1": "Daniel Jaramillo Juárez",
+          "p2": "Lucía Sebastián Navarro"
+        },
+        {
+          "id": "MX09",
+          "p1": "Marisol Juárez Roncero",
+          "p2": "José Antonio Jaramillo Mendes"
+        },
+        {
+          "id": "MX10",
+          "p1": "Víctor Sebastián Dávila",
+          "p2": "Bárbara Molina Durán"
+        },
+        {
+          "id": "MX11",
+          "p1": "Carlota Cartagena",
+          "p2": "José Alberto Martínez Moreno"
+        },
+        {
+          "id": "MX12",
+          "p1": "Concepción Martínez Saiz",
+          "p2": "Rafael Cecilio"
+        },
+        {
+          "id": "MX13",
+          "p1": "Blanca de Dorremochea Zaldívar",
+          "p2": "Francisco Javier de Marcos del Pozo"
+        }
+      ],
+      "groups": null,
+      "results": {},
+      "confirmed": {}
+    },
+    "Masculino": {
+      "pairs": [
+        {
+          "id": "M01",
+          "p1": "Joaquín Ansaldo Rosillo",
+          "p2": "Daniel Sebastián González"
+        },
+        {
+          "id": "M02",
+          "p1": "David Garcia Rollon",
+          "p2": "David Jiménez Álvarez"
+        },
+        {
+          "id": "M03",
+          "p1": "Pablo Segade Calvo",
+          "p2": "Guillermo Hernando Garcia"
+        },
+        {
+          "id": "M04",
+          "p1": "Daniel Hernando Gomez",
+          "p2": "Jose Manuel Granados Sánchez"
+        },
+        {
+          "id": "M05",
+          "p1": "Mario Playá Serra",
+          "p2": "José Carlos Sánchez Cano"
+        },
+        {
+          "id": "M06",
+          "p1": "Juan Aguilera Gil",
+          "p2": "Hugo Granados Jiménez"
+        },
+        {
+          "id": "M07",
+          "p1": "Jose Luis Fernández Arevalo",
+          "p2": "Víctor Sebastián Dávila"
+        },
+        {
+          "id": "M08",
+          "p1": "Daniel Jaramillo Juárez",
+          "p2": "Francisco Javier Perez Gutierrez"
+        },
+        {
+          "id": "M09",
+          "p1": "Carlos Castellanos Martín",
+          "p2": "José Antonio Jaramillo Mendes"
+        },
+        {
+          "id": "M10",
+          "p1": "Izan Gil Sampere",
+          "p2": "Mario Raya Sampere"
+        },
+        {
+          "id": "M11",
+          "p1": "José María Bravo Balmori",
+          "p2": "Rafael Cecilio"
+        },
+        {
+          "id": "M12",
+          "p1": "Francisco Javier de Marcos del Pozo",
+          "p2": "Diego Cimadevilla"
+        },
+        {
+          "id": "M13",
+          "p1": "Rafael Castan",
+          "p2": "Alex Percey"
+        }
+      ],
+      "groups": null,
+      "results": {},
+      "confirmed": {}
+    },
+    "Femenino": {
+      "pairs": [
+        {
+          "id": "F01",
+          "p1": "Amaya Garcia Ramos",
+          "p2": "Laura Alvarez Piña"
+        },
+        {
+          "id": "F02",
+          "p1": "Concepción Martínez Saiz",
+          "p2": "Cristina Almirall"
+        },
+        {
+          "id": "F03",
+          "p1": "Concepción de la Peña Vizcaíno",
+          "p2": "Marisol Juárez Roncero"
+        },
+        {
+          "id": "F04",
+          "p1": "Laura Dávila Alcalá",
+          "p2": "Bárbara Molina Durán"
+        },
+        {
+          "id": "F05",
+          "p1": "Kitty Lo",
+          "p2": "Blanca de Dorremochea Zaldívar"
+        }
+      ],
+      "groups": null,
+      "results": {},
+      "confirmed": {}
+    }
+  },
+  "raffle": {
+    "winners": []
+  }
+}

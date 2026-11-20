@@ -40,38 +40,8 @@ function browserFetch(win) {
   };
 }
 
-function change(win, input, value) {
-  assert.ok(input, "No se encontró el campo que se quería editar");
-  input.value = value;
-  input.dispatchEvent(new win.Event("change", { bubbles: true }));
-}
-
 function query(win, selector) {
   return win.document.querySelector(selector);
-}
-
-function scoreSelector(draw, round, matchIndex, setIndex, field) {
-  return `.bk-in[data-draw="${draw}"][data-round="${round}"][data-idx="${matchIndex}"]` +
-    `[data-set="${setIndex}"][data-f="${field}"]`;
-}
-
-function enterSet(win, draw, round, matchIndex, setIndex, a, b, scoreA, scoreB) {
-  assert.equal(
-    win.setBracketScore(draw, round, matchIndex, setIndex, "s1", String(scoreA), a.id, b.id),
-    true,
-    win.lastScoreError
-  );
-  assert.equal(
-    win.setBracketScore(draw, round, matchIndex, setIndex, "s2", String(scoreB), a.id, b.id),
-    true,
-    win.lastScoreError
-  );
-}
-
-function enterMatch(win, draw, round, matchIndex, a, b, scores) {
-  scores.forEach((score, setIndex) => {
-    enterSet(win, draw, round, matchIndex, setIndex, a, b, score[0], score[1]);
-  });
 }
 
 function contentType(filename) {
@@ -88,6 +58,15 @@ function startServer() {
     const filename = path.resolve(root, relative);
     if (!filename.startsWith(root + path.sep)) {
       response.writeHead(403).end("Forbidden");
+      return;
+    }
+    if (relative === "datos-almanzor-2026.json") {
+      const data = JSON.parse(fs.readFileSync(filename, "utf8"));
+      for (const name of Object.keys(data.categories)) {
+        data.categories[name] = {pairs:[], groups:null, confirmed:{}, results:{}};
+      }
+      data.raffle.winners = [];
+      response.writeHead(200, {"content-type":"application/json"}).end(JSON.stringify(data));
       return;
     }
     fs.readFile(filename, (error, contents) => {
@@ -122,179 +101,126 @@ async function run() {
       virtualConsole: createConsole(adminErrors),
       beforeParse(win) {
         win.fetch = browserFetch(win);
+        win.localStorage.setItem("burk-admin-state-v2", '{"pairs":["Pinto"]}');
         win.confirm = () => true;
         win.alert = () => {};
       }
     });
     const win = admin.window;
-    await waitFor(() => win.document.readyState === "complete", "carga del panel");
-    query(win, "#btn-load").click();
-    await waitFor(() => win.state && win.state.pairs.length === 25, "datos publicados del panel");
+    await waitFor(() => win.state, "carga del panel");
+    assert.equal(win.state.eventId, "almanzor-2026-11-21");
+    const initial = JSON.parse(JSON.stringify(win.state));
+    assert.equal(win.localStorage.getItem("burk-admin-state-v2"), null);
+    assert.ok(!query(win, "#v-inscripcion").textContent.includes("Pinto"));
+    const select = (window, name) => query(window, '[data-category="' + name + '"]').click();
+    const tab = (window, name) => query(window, '#tabs [data-tab="' + name + '"]').click();
 
-    assert.equal(win.state.schemaVersion, 3);
-    assert.deepEqual(Array.from(win.state.groups, (group) => group.length), [5, 5, 5, 5, 5]);
-    assert.equal(win.groupMatchList(win.state).length, 50);
-
-    query(win, '.tab[data-tab="resultados"]').click();
-    const firstRow = query(win, ".match[data-key]");
-    const firstKey = firstRow.dataset.key;
-    change(win, firstRow.querySelector('[data-f="s1"]'), "15");
-    change(win, firstRow.querySelector('[data-f="s2"]'), "14");
-    assert.equal(win.state.results[firstKey].s2, "", "15-14 debía rechazarse");
-    assert.match(query(win, "#toast").textContent, /2 puntos/);
-
-    change(win, firstRow.querySelector('[data-f="s2"]'), "13");
-    assert.equal(win.isPlayed(win.state.results[firstKey]), true, "15-13 debía aceptarse");
-    change(win, firstRow.querySelector('[data-f="s2"]'), "");
-    change(win, firstRow.querySelector('[data-f="s1"]'), "26");
-    change(win, firstRow.querySelector('[data-f="s2"]'), "24");
-    assert.equal(win.isPlayed(win.state.results[firstKey]), true, "26-24 debía aceptarse");
-
-    assert.equal(query(win, "#btn-gen"), null, "No debe generarse un cuadro provisional");
-    win.document.querySelectorAll(".match[data-key]").forEach((row) => {
-      if (row.dataset.key === firstKey) return;
-      change(win, row.querySelector('[data-f="s1"]'), "15");
-      change(win, row.querySelector('[data-f="s2"]'), "13");
-    });
-    assert.equal(win.playedCount(win.state), 50);
-    assert.equal(win.groupStageComplete(win.state), true);
-
-    query(win, '.tab[data-tab="clasificados"]').click();
-    assert.ok(query(win, "#btn-gen"), "El botón debe aparecer al completar los 50 partidos");
-    query(win, "#btn-gen").click();
-    assert.ok(win.state.bracket && win.state.bracket.main && win.state.bracket.cons);
-
-    ["main", "cons"].forEach((draw) => {
-      win.state.bracket[draw].qf.forEach((match, matchIndex) => {
-        enterMatch(win, draw, "qf", matchIndex, match.a, match.b, [[15, 13]]);
+    const names = {Mixto:13,Masculino:13,Femenino:5};
+    const file = {eventId:initial.eventId, categories:{}};
+    for (const [name, count] of Object.entries(names)) {
+      file.categories[name] = Array.from({length:count}, (_,i) => ({id:"p"+i,p1:name+" A"+i,p2:name+" B"+i}));
+    }
+    const upload = query(win, "#roster-file");
+    const workbook = fs.readFileSync(path.join(root, "tests/fixtures/parejas.xlsx"));
+    Object.defineProperty(upload, "files", {value:[{
+      name:"parejas.xlsx", size:workbook.length,
+      arrayBuffer:async () => Uint8Array.from(workbook).buffer
+    }]});
+    upload.dispatchEvent(new win.Event("change", {bubbles:true}));
+    await waitFor(() => query(win, '.pair-row input'), "carga de la lista editable");
+    for (const [name, count] of Object.entries(names)) {
+      assert.deepEqual(JSON.parse(JSON.stringify(win.state.categories[name].pairs)),file.categories[name]);
+      select(win, name);
+      assert.equal(win.document.querySelectorAll(".pair-row").length, count);
+      assert.equal(win.state.categories[name].groups, null);
+    }
+    const firstName = query(win, '.pair-row input');
+    firstName.value = "Nombre corregido <Ana>";
+    firstName.dispatchEvent(new win.Event("input", {bubbles:true}));
+    query(win,"#btn-draw").click();
+    assert.equal(win.state.categories.Mixto.groups, null);
+    assert.ok(query(win,"#v-clasificados").textContent.includes(firstName.value));
+    tab(win,"resultados");
+    const save = (id, scores) => {
+      const card = query(win, '[data-match="'+id+'"]');
+      scores.forEach(([a,b],i) => {
+        card.querySelector('[data-set="'+i+'"][data-field="s1"]').value=a;
+        card.querySelector('[data-set="'+i+'"][data-field="s2"]').value=b;
       });
-    });
-    win.renderCuadros();
-
-    assert.equal(win.document.querySelectorAll('.bk-in[data-draw="main"][data-round="sf"]').length, 12);
-    assert.equal(win.document.querySelectorAll('.bk-in[data-draw="cons"][data-round="sf"]').length, 4);
-    assert.equal(win.document.querySelectorAll('.bk-in[data-draw="main"][data-round="third"]').length, 6);
-    assert.equal(win.document.querySelectorAll('.bk-in[data-draw="cons"][data-round="third"]').length, 2);
-    assert.match(query(win, '.bk-in[data-draw="main"][data-round="third"]').closest(".bk-match").textContent, /S3 · 11/);
-
-    assert.equal(query(win, scoreSelector("main", "sf", 0, 1, "s1")).disabled, true);
-    change(win, query(win, scoreSelector("main", "sf", 0, 0, "s1")), "15");
-    change(win, query(win, scoreSelector("main", "sf", 0, 0, "s2")), "13");
-    assert.equal(query(win, scoreSelector("main", "sf", 0, 1, "s1")).disabled, false);
-    change(win, query(win, scoreSelector("main", "sf", 0, 1, "s1")), "13");
-    change(win, query(win, scoreSelector("main", "sf", 0, 1, "s2")), "15");
-    assert.equal(query(win, scoreSelector("main", "sf", 0, 2, "s1")).disabled, false);
-
-    change(win, query(win, scoreSelector("main", "sf", 0, 2, "s1")), "11");
-    change(win, query(win, scoreSelector("main", "sf", 0, 2, "s2")), "10");
-    assert.equal(win.state.bracket.main.sf[0].sets[2].s2, "", "11-10 debía rechazarse");
-    change(win, query(win, scoreSelector("main", "sf", 0, 2, "s1")), "26");
-    change(win, query(win, scoreSelector("main", "sf", 0, 2, "s2")), "24");
-    assert.equal(win.matchScoreStatus(win.state.bracket.main.sf[0], win.matchFormat("main", "sf")).complete, true);
-
-    let main = win.bracketDerived(win.state.bracket.main, "main");
-    enterMatch(win, "main", "sf", 1, main.sfPairs[1][0], main.sfPairs[1][1], [[15, 7], [15, 9]]);
-    main = win.bracketDerived(win.state.bracket.main, "main");
-    enterMatch(win, "main", "f", 0, main.sfW[0], main.sfW[1], [[15, 13], [13, 15], [11, 9]]);
-    enterMatch(win, "main", "third", 0, main.sfL[0], main.sfL[1], [[15, 8], [15, 10]]);
-
-    let consolation = win.bracketDerived(win.state.bracket.cons, "cons");
-    consolation.sfPairs.forEach((pair, matchIndex) => {
-      enterMatch(win, "cons", "sf", matchIndex, pair[0], pair[1], [[15, 13]]);
-    });
-    consolation = win.bracketDerived(win.state.bracket.cons, "cons");
-    enterMatch(win, "cons", "f", 0, consolation.sfW[0], consolation.sfW[1], [[15, 13]]);
-    enterMatch(win, "cons", "third", 0, consolation.sfL[0], consolation.sfL[1], [[26, 24]]);
-    win.renderCuadros();
-
-    assert.ok(win.bracketDerived(win.state.bracket.main, "main").champ);
-    assert.ok(win.bracketDerived(win.state.bracket.main, "main").thirdPlace);
-    assert.ok(win.bracketDerived(win.state.bracket.cons, "cons").champ);
-    assert.ok(win.bracketDerived(win.state.bracket.cons, "cons").thirdPlace);
-
-    let apiGets = 0;
-    let apiPuts = 0;
-    let publishedPayload = null;
-    win.localStorage.setItem(win.LS_CFG, JSON.stringify({
-      owner: "vitineska-cell",
-      repo: "burk-torneo",
-      token: "test-token"
-    }));
-    win.fetch = async (input, init = {}) => {
-      const url = String(input);
-      if (url.includes("api.github.com/repos/")) {
-        if ((init.method || "GET") === "GET") {
-          apiGets++;
-          const currentData = publishedPayload || JSON.parse(JSON.stringify(win.state));
-          return new Response(JSON.stringify({
-            sha: "sha-actual",
-            content: Buffer.from(JSON.stringify(currentData), "utf8").toString("base64")
-          }), {
-            status: 200,
-            headers: { "content-type": "application/json" }
-          });
-        }
-        apiPuts++;
-        const request = JSON.parse(init.body);
-        publishedPayload = JSON.parse(Buffer.from(request.content, "base64").toString("utf8"));
-        return new Response(JSON.stringify({ content: { sha: "sha-nuevo" } }), {
-          status: 200,
-          headers: { "content-type": "application/json" }
-        });
-      }
-      return browserFetch(win)(input, init);
+      card.querySelector("[data-save]").click();
     };
-    query(win, "#btn-pub").click();
-    await waitFor(
-      () => apiPuts === 1 && query(win, "#btn-pub").disabled === false,
-      "publicación simulada"
-    );
-    assert.equal(apiGets, 1);
-    assert.equal(apiPuts, 1);
-    assert.equal(publishedPayload.schemaVersion, 3);
-    assert.equal(publishedPayload.pairs.length, 25);
-    assert.deepEqual(publishedPayload.groups, JSON.parse(JSON.stringify(win.state.groups)));
-    assert.equal(win.dirty, false);
-    assert.match(query(win, "#toast").textContent, /Publicado/);
+    save("F-01",[[21,21]]);
+    assert.equal(win.state.categories.Femenino.results["F-01"], undefined);
+    for (let n=1;n<=10;n++) save("F-"+String(n).padStart(2,"0"), [[21,20]]);
+    tab(win,"cuadros");
+    assert.ok(query(win,'[data-match="F-11"] input').disabled);
+    tab(win,"clasificados");
+    query(win,"[data-confirm]").click();
+    tab(win,"cuadros");
+    save("F-11",[[21,18],[18,21],[21,20]]);
+    save("F-12",[[21,0],[21,0]]);
+    save("F-13",[[20,21],[19,21]]);
+    assert.match(win.buildSummary(),/F-13 Final/);
+    assert.ok(!query(win,"#v-cuadros").textContent.includes("3.er puesto"));
+    select(win,"Masculino");tab(win,"inscripcion");query(win,"#btn-draw").click();
+    select(win,"Mixto");tab(win,"inscripcion");query(win,"#btn-draw").click();
+    assert.deepEqual(Object.keys(win.state.categories.Mixto.groups).map(s => s[1]).sort(),
+      Array.from("AAAABBBCCCDDD"));
 
-    query(win, "#btn-load").click();
-    await waitFor(
-      () => apiGets === 2 && /Datos publicados cargados/.test(query(win, "#toast").textContent),
-      "recarga desde la API simulada"
-    );
-    assert.equal(win.state.pairs.length, 25);
-    assert.ok(win.bracketDerived(win.state.bracket.main, "main").champ);
-    assert.match(query(win, "#toast").textContent, /Datos publicados cargados/);
-    assert.deepEqual(adminErrors, []);
+    let apiPuts = 0, apiGets = 0, publishedPayload = initial;
+    let conflict = false;
+    win.localStorage.setItem(win.LS_CFG, JSON.stringify({owner:"fixture",repo:"tournament",token:"test-only"}));
+    win.fetch = async (url, init={}) => {
+      assert.ok(String(url).includes("/contents/datos-almanzor-2026.json"));
+      if (init.method !== "PUT") {
+        apiGets++;
+        return Response.json({sha:"test-sha",content:Buffer.from(JSON.stringify(publishedPayload)).toString("base64")});
+      }
+      apiPuts++;
+      if (conflict) return new Response(null, {status:409});
+      const request = JSON.parse(init.body);
+      assert.equal(request.sha,"test-sha");
+      assert.equal(request.branch,"main");
+      publishedPayload=JSON.parse(Buffer.from(request.content,"base64").toString());
+      return Response.json({});
+    };
+    query(win,"#btn-pub").click();
+    await waitFor(() => apiPuts === 1 && !query(win,"#btn-pub").disabled, "publicación simulada");
+    assert.equal(win.dirty,false);
+    assert.deepEqual(publishedPayload,JSON.parse(JSON.stringify(win.state)));
+    query(win,"#btn-load").click();
+    await waitFor(() => apiGets===2 && !query(win,"#btn-load").disabled,"recarga");
+    conflict=true;win.markDirty();
+    await win.publish();
+    assert.equal(apiPuts,2,"Un conflicto no debe provocar una sobrescritura automática");
+    assert.equal(win.dirty,true);
+    publishedPayload.meta.updatedAt += "-otra-mesa";
+    await win.publish();
+    assert.equal(apiPuts,2,"La mesa desactualizada debe conservar el borrador sin publicar");
+    publishedPayload=JSON.parse(JSON.stringify(win.state));
+    assert.deepEqual(adminErrors,[]);
 
-    const publicErrors = [];
+    const publicErrors=[];
     publicPage = await JSDOM.fromURL(baseUrl + "/index.html", {
-      runScripts: "dangerously",
-      resources: new LocalResources(),
-      pretendToBeVisual: true,
-      virtualConsole: createConsole(publicErrors),
-      beforeParse(publicWindow) {
-        publicWindow.fetch = browserFetch(publicWindow);
+      runScripts:"dangerously", resources:new LocalResources(), pretendToBeVisual:true,
+      virtualConsole:createConsole(publicErrors), beforeParse(w) {
+        w.fetch=async () => Response.json(publishedPayload);
       }
     });
-    const publicWindow = publicPage.window;
-    await waitFor(
-      () => publicWindow.DATA && publicWindow.DATA.pairs && publicWindow.DATA.pairs.length === 25,
-      "datos de la web pública"
-    );
-    publicWindow.DATA = JSON.parse(JSON.stringify(win.state));
-    publicWindow.migrateTournamentState(publicWindow.DATA);
-    publicWindow.renderAll();
-
-    const publicText = query(publicWindow, "#v-cuadros").textContent;
-    assert.match(publicText, /Grupo Oro/);
-    assert.match(publicText, /Grupo Consolación/);
-    assert.match(publicText, /S3 · 11/);
-    assert.match(publicText, /26/);
-    assert.match(query(publicWindow, "#v-clas").textContent, /Clasificación final/);
-    assert.match(query(publicWindow, "#champ-banner").textContent, /Campeones del torneo/);
-    assert.deepEqual(publicErrors, []);
-
+    const publicWindow=publicPage.window;
+    await waitFor(() => publicWindow.DATA,"visor");
+    select(publicWindow,"Femenino");
+    tab(publicWindow,"cuadros");
+    assert.match(query(publicWindow,"#champ-banner").textContent,/Campeones · Femenino/);
+    assert.equal(publicWindow.document.querySelectorAll("#v-cuadros [data-match]").length,3);
+    assert.equal(publicWindow.document.querySelectorAll("#v-horario [data-match]").length,13);
+    assert.ok(query(publicWindow,"#v-clas").textContent.includes(firstName.value));
+    select(publicWindow,"Masculino");
+    assert.equal(query(publicWindow,"#champ-banner").textContent,"");
+    assert.equal(publicWindow.document.querySelectorAll("#v-horario [data-match]").length,32);
+    select(publicWindow,"Mixto");
+    assert.equal(publicWindow.document.querySelectorAll("#v-horario [data-match]").length,28);
+    assert.deepEqual(publicErrors,[]);
     const embedErrors = [];
     embedPage = await JSDOM.fromURL(baseUrl + "/embed.html", {
       runScripts: "dangerously",
@@ -307,11 +233,11 @@ async function run() {
     });
     const embedWindow = embedPage.window;
     await waitFor(
-      () => embedWindow.DATA && embedWindow.DATA.pairs && embedWindow.DATA.pairs.length === 25,
+      () => embedWindow.DATA && embedWindow.DATA.eventId === "almanzor-2026-11-21",
       "datos de la vista embebida"
     );
-    assert.equal(embedWindow.groupMatchList(embedWindow.DATA).length, 50);
-    assert.match(embedWindow.document.documentElement.textContent, /TORNEO NOCTURNO EN DIRECTO/);
+    assert.equal(embedWindow.document.querySelectorAll("#v-horario [data-match]").length, 28);
+    assert.match(embedWindow.document.documentElement.textContent, /Torneo BÜRK Almanzor/);
     assert.ok(
       Array.from(embedWindow.document.querySelectorAll("style")).some((style) => style.textContent.includes("max-width:1400px")),
       "La vista embebida debe conservar el ancho especial de WordPress"
@@ -369,7 +295,7 @@ async function run() {
     assert.deepEqual(parentErrors, []);
 
     console.log(
-      "OK · panel, carga de datos, validación 15/11 sin límite, cuadros Oro/Consolación, " +
+      "OK · panel, importación, corrección de nombres, tres sorteos, final femenina, conflictos, " +
       "publicación simulada, web pública, vista embebida y scroll único en WordPress"
     );
   } finally {
