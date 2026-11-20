@@ -549,6 +549,7 @@ $("btn-load").addEventListener("click",loadPublished);
 updateStatus();
 if(!getCfg())showCfg(true);
 try {
+  localStorage.removeItem("burk-admin-state-v2");
   const saved = JSON.parse(localStorage.getItem(LS_STATE));
   if (saved && saved.baseline) {
     checkEvent(JSON.parse(saved.baseline));

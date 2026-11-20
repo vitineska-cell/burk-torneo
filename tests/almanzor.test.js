@@ -16,7 +16,7 @@ const roster = {eventId:data.eventId, categories:{}};
 for (const [name, [n]] of Object.entries(expected)) {
   roster.categories[name] = Array.from({length:n}, (_, i) => ({id:"p"+i, p1:name+" A"+i, p2:name+" B"+i}));
 }
-assert.throws(() => checkEvent(JSON.parse(fs.readFileSync(path.join(root, "datos.json")))));
+assert.throws(() => checkEvent({pairs:[], results:{}}));
 assert.throws(() => checkRoster(roster.categories.Mixto.slice(1), "Mixto", true));
 assert.throws(() => checkRoster(Array(13).fill(roster.categories.Mixto[0]), "Mixto", true));
 assert.throws(() => importPairs(data, {...roster, categories:{...roster.categories, Femenino:[]}}));

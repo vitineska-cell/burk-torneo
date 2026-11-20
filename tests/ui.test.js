@@ -110,7 +110,7 @@ async function run() {
     await waitFor(() => win.state, "carga del panel");
     assert.equal(win.state.eventId, "almanzor-2026-11-21");
     const initial = JSON.parse(JSON.stringify(win.state));
-    assert.equal(win.localStorage.getItem("burk-admin-state-v2"), '{"pairs":["Pinto"]}');
+    assert.equal(win.localStorage.getItem("burk-admin-state-v2"), null);
     assert.ok(!query(win, "#v-inscripcion").textContent.includes("Pinto"));
     const select = (window, name) => query(window, '[data-category="' + name + '"]').click();
     const tab = (window, name) => query(window, '#tabs [data-tab="' + name + '"]').click();
