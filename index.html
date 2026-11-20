@@ -214,7 +214,7 @@ document.addEventListener("visibilitychange",function(){if(!document.hidden)load
 
 $("tabs").addEventListener("click",function(e){
   var b=e.target.closest(".tab");if(!b)return;
-  document.querySelectorAll(".tab").forEach(function(x){x.classList.toggle("tab-on",x===b);});
+  $("tabs").querySelectorAll(".tab").forEach(function(x){x.classList.toggle("tab-on",x===b);});
   ["clas","horario","cuadros","sorteos"].forEach(function(k){
     $("v-"+k).style.display=b.dataset.tab===k?"":"none";
   });
