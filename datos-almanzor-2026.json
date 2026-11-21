@@ -5,7 +5,7 @@
     "venue": "Pickleball Almanzor",
     "date": "2026-11-21",
     "courts": 7,
-    "updatedAt": "2026-11-21T14:23:03.070Z"
+    "updatedAt": "2026-11-21T14:23:54.428Z"
   },
   "categories": {
     "Mixto": {
@@ -649,6 +649,16 @@
           "sets": [
             {
               "s1": "13",
+              "s2": "21"
+            }
+          ]
+        },
+        "MG21": {
+          "aId": "M13",
+          "bId": "M07",
+          "sets": [
+            {
+              "s1": "7",
               "s2": "21"
             }
           ]
