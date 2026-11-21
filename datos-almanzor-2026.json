@@ -5,7 +5,7 @@
     "venue": "Pickleball Almanzor",
     "date": "2026-11-21",
     "courts": 7,
-    "updatedAt": "2026-11-21T06:21:03.533Z"
+    "updatedAt": "2026-11-21T06:26:35.660Z"
   },
   "categories": {
     "Mixto": {
@@ -76,7 +76,21 @@
           "p2": "Francisco Javier de Marcos del Pozo"
         }
       ],
-      "groups": null,
+      "groups": {
+        "XA1": "MX08",
+        "XA2": "MX03",
+        "XA3": "MX06",
+        "XA4": "MX11",
+        "XA5": "MX09",
+        "XB1": "MX07",
+        "XB2": "MX05",
+        "XB3": "MX12",
+        "XB4": "MX10",
+        "XC1": "MX02",
+        "XC2": "MX01",
+        "XC3": "MX13",
+        "XC4": "MX04"
+      },
       "results": {},
       "confirmed": {}
     },
