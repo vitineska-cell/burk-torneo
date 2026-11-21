@@ -21,6 +21,7 @@ body{background:var(--bg);color:var(--txt);font-family:'Archivo',system-ui,sans-
 .hdr-title{font-family:'Big Shoulders Display',sans-serif;font-weight:900;font-size:clamp(28px,6vw,44px);line-height:.95;color:#fff;text-transform:uppercase}
 .hdr-rule{height:3px;width:56px;background:var(--gold);margin-top:10px}
 .toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.pending-toolbar{position:sticky;top:0;z-index:2;background:var(--bg);padding:10px 0}
 .status{font-size:12px;display:inline-flex;align-items:center;gap:7px;padding:8px 12px;border:1px solid var(--line)}
 .st-dot{width:8px;height:8px;border-radius:50%}
 .btn{border:1px solid var(--line);background:var(--panel);color:var(--txt);font-family:'Archivo';font-weight:600;font-size:13px;padding:10px 16px;cursor:pointer}
@@ -153,6 +154,7 @@ main{padding-top:16px}
     <div class="row">
       <button class="btn" id="cfg-save">Guardar configuración</button>
       <button class="btn" id="cfg-test">Probar conexión</button>
+      <button class="btn" id="cfg-copy-token">Copiar token</button>
       <span class="msg" id="cfg-msg"></span>
     </div>
     <div class="note">La configuración se guarda solo en este navegador de este ordenador. El token es tu llave para publicar: no lo compartas con nadie.</div>
@@ -204,6 +206,7 @@ main{padding-top:16px}
 var LS_STATE = "burk-admin-rally-" + EVENT_ID;
 var LS_CFG = "burk-admin-cfg-v1";
 var state = null, baseline = null, dirty = false;
+var pendingOnly = false;
 var activeTab = "inscripcion", category = "Mixto", raffleBusy = false, lastPublished = null;
 var $ = id => document.getElementById(id);
 
@@ -327,6 +330,15 @@ function renderInscripcion() {
     '<label>Excel definitivo de parejas (.xlsx) o listado .json <input type="file" accept=".xlsx,.json" id="roster-file"></label></div></div>');
 }
 
+function applyPendingFilter(view) {
+  const el = $("v-" + activeTab);
+  const button = el.querySelector("[data-pending-filter]");
+  button.textContent = pendingOnly ? "Mostrar todos" : "Solo pendientes";
+  button.setAttribute("aria-pressed", String(pendingOnly));
+  const cards = [...el.querySelectorAll("[data-match]")];
+  cards.forEach(card => { card.hidden = pendingOnly && !!view.matches.get(card.dataset.match).winner; });
+  el.querySelector("[data-no-pending]").hidden = !pendingOnly || cards.some(card => !card.hidden);
+}
 function render() {
   if (!state) return;
   $("categories").innerHTML = categoryNav(category);
@@ -339,7 +351,10 @@ function render() {
   if (!division.groups) { el.innerHTML = pendingDraw(); return; }
   const view = competition(division, category);
   if (activeTab === "clasificados") { el.innerHTML = groupTables(view, true); return; }
-  el.innerHTML = scheduleHTML(view, category, m => isGroup(m) === (activeTab === "resultados"), true);
+  el.innerHTML = '<div class="pending-toolbar"><button type="button" class="btn" data-pending-filter aria-pressed="false">Solo pendientes</button></div>' +
+    scheduleHTML(view, category, m => isGroup(m) === (activeTab === "resultados"), true) +
+    '<div class="empty" data-no-pending hidden>No quedan partidos pendientes.</div>';
+  applyPendingFilter(view);
 }
 
 $("tabs").addEventListener("click", event => {
@@ -372,6 +387,11 @@ document.querySelector("main").addEventListener("click", event => {
   const button = event.target.closest("button");
   if (!button || !state) return;
   const division = state.categories[category];
+  if (button.hasAttribute("data-pending-filter")) {
+    pendingOnly = !pendingOnly;
+    applyPendingFilter(competition(division, category));
+    return;
+  }
   try {
     if (button.id === "btn-add-pair") {
       division.pairs.push({id: "p" + crypto.randomUUID(), p1:"", p2:""});
@@ -546,6 +566,17 @@ $("cfg-save").addEventListener("click",function(){
   localStorage.setItem(LS_CFG,JSON.stringify({owner:owner,repo:repo,token:token}));
   msg.className="msg ok";msg.textContent="✓ Guardada en este navegador.";
   updateStatus();
+});
+$("cfg-copy-token").addEventListener("click",async function(){
+  const input = $("cfg-token");
+  if(!input.value.trim()){toast("El campo del token está vacío.");return;}
+  try {
+    await navigator.clipboard.writeText(input.value.trim());
+    toast("Token copiado.");
+  } catch {
+    input.focus();input.select();
+    toast("Token seleccionado. Pulsa Ctrl+C para copiarlo.");
+  }
 });
 $("cfg-test").addEventListener("click",function(){
   var msg=$("cfg-msg");

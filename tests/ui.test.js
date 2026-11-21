@@ -157,12 +157,30 @@ async function run() {
       });
       card.querySelector("[data-save]").click();
     };
+    const filter = () => query(win, '#v-'+win.activeTab+' [data-pending-filter]');
+    const visible = () => [...query(win,'#v-'+win.activeTab).querySelectorAll("[data-match]")].filter(card=>!card.hidden).length;
+    const beforeFilter=JSON.stringify(win.state);
+    filter().click();
+    assert.equal(visible(),10);
+    assert.equal(JSON.stringify(win.state),beforeFilter,"Filtrar no modifica el torneo");
+    const unsaved=query(win,'[data-match="FG01"] [data-field="s1"]');
+    unsaved.value="17";
+    filter().click();filter().click();
+    assert.equal(unsaved.value,"17","Alternar el filtro conserva los puntos sin guardar");
     let savedEvents=0;
     win.addEventListener("marcador-guardado",()=>savedEvents++);
     save("FG01",[[21,21]]);
     assert.equal(savedEvents,0,"Un marcador inválido no se transmite al pabellón");
     assert.equal(win.state.categories.Femenino.results["FG01"], undefined);
     for (let n=1;n<=10;n++) save("FG"+String(n).padStart(2,"0"), [[21,20]]);
+    assert.equal(visible(),0,"Guardar retira los partidos completados");
+    assert.equal(query(win,"[data-no-pending]").hidden,false);
+    filter().click();assert.equal(visible(),10);
+    save("FG01",[["",""]]);
+    filter().click();assert.equal(visible(),1,"Un resultado anulado vuelve a pendientes");
+    save("FG01",[[21,20]]);
+    filter().click();
+    savedEvents-=2;
     assert.equal(savedEvents,10,"Se transmite cada marcador válido al guardarlo");
     tab(win,"cuadros");
     assert.ok(query(win,'[data-match="FS1"] input').disabled);
@@ -241,6 +259,12 @@ async function run() {
     save("MG01",[["",""]]);
     await waitFor(()=>count()===15,"Anular el marcador recupera el próximo partido");
     assert.deepEqual(projectionErrors,[]);
+    const mockToken="test-token-for-copy";
+    query(win,"#cfg-token").value=mockToken;
+    let copied;
+    Object.defineProperty(win.navigator,"clipboard",{configurable:true,value:{writeText:async text=>{copied=text;}}});
+    query(win,"#cfg-copy-token").click();await waitFor(()=>copied===mockToken,"copiar token enmascarado");
+    assert.equal(query(win,"#cfg-token").type,"password");
     const publicErrors=[];
     publicPage = await JSDOM.fromURL(baseUrl + "/index.html", {
       runScripts:"dangerously", resources:new LocalResources(), pretendToBeVisual:true,
