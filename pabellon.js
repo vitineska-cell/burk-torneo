@@ -6,8 +6,8 @@ const pavilionClock=new Intl.DateTimeFormat("sv-SE", {
   timeZone:"Europe/Madrid",year:"numeric",month:"2-digit",day:"2-digit",
   hour:"2-digit",minute:"2-digit",hourCycle:"h23"
 });
-function nextHour(games, date, now){
-  const start=pavilionClock.format(now);
+function upcomingMatches(games, date, now){
+  const start=pavilionClock.format(now-30*60000);
   const end=pavilionClock.format(now+3600000);
   return games.filter(game=>{
     const kickoff=date+" "+game.match.start;
@@ -61,7 +61,7 @@ function render(){
   }else{
     const rows=[];
     let games=fixturesFor(setup.category).map(m=>comp.matches.get(m.id));
-    if(view==="horario")games=nextHour(games,data.meta.date,Date.now());
+    if(view==="horario")games=upcomingMatches(games,data.meta.date,Date.now());
     if(view==="resultados"){
       games=Object.keys(div.results).reverse().map(id=>comp.matches.get(id)).filter(g=>g?.winner);
     }
@@ -76,7 +76,7 @@ function render(){
       const score=g.status.sets.filter(s=>s.s1!=="" && s.s2!=="").map(s=>s.s1+"–"+s.s2).join(" / ");
       rows.push([g.match.start,g.match.court,names,view==="horario"?escHtml(g.match.stage):score||"Pendiente"]);
     }
-    const empty=view==="resultados"?"Todavía no hay resultados publicados." : "No hay partidos pendientes programados en los próximos 60 minutos.";
+    const empty=view==="resultados"?"Todavía no hay resultados publicados." : "No hay partidos pendientes programados en los últimos 30 minutos ni en los próximos 60 minutos.";
     html=rows.length?"<table><thead><tr>"+heads.map(h=>"<th>"+h+"</th>").join("")+"</tr></thead><tbody>"+rows.map(row=>"<tr>"+row.map((v,i)=>{
     const cls=["time","num","pairs",""][i];
     return '<td class="'+cls+'">'+v+"</td>";
