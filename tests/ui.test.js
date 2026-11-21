@@ -87,6 +87,13 @@ async function run() {
   const server = await startServer();
   const address = server.address();
   const baseUrl = `http://127.0.0.1:${address.port}`;
+  const channels = [];
+  class TestChannel {
+    constructor(name) { this.channel = new BroadcastChannel(name); channels.push(this.channel); }
+    set onmessage(fn) { this.channel.onmessage = fn; }
+    postMessage(message) { this.channel.postMessage(message); }
+  }
+  let projection;
   let admin;
   let publicPage;
   let embedPage;
@@ -100,6 +107,7 @@ async function run() {
       pretendToBeVisual: true,
       virtualConsole: createConsole(adminErrors),
       beforeParse(win) {
+        win.BroadcastChannel = TestChannel;
         win.fetch = browserFetch(win);
         win.localStorage.setItem("burk-admin-state-v2", '{"pairs":["Pinto"]}');
         win.confirm = () => true;
@@ -149,9 +157,13 @@ async function run() {
       });
       card.querySelector("[data-save]").click();
     };
+    let savedEvents=0;
+    win.addEventListener("marcador-guardado",()=>savedEvents++);
     save("FG01",[[21,21]]);
+    assert.equal(savedEvents,0,"Un marcador inválido no se transmite al pabellón");
     assert.equal(win.state.categories.Femenino.results["FG01"], undefined);
     for (let n=1;n<=10;n++) save("FG"+String(n).padStart(2,"0"), [[21,20]]);
+    assert.equal(savedEvents,10,"Se transmite cada marcador válido al guardarlo");
     tab(win,"cuadros");
     assert.ok(query(win,'[data-match="FS1"] input').disabled);
     tab(win,"clasificados");
@@ -204,6 +216,31 @@ async function run() {
     publishedPayload=JSON.parse(JSON.stringify(win.state));
     assert.deepEqual(adminErrors,[]);
 
+    const projectionErrors=[];
+    projection=await JSDOM.fromURL(baseUrl+"/pabellon.html",{
+      runScripts:"dangerously",resources:new LocalResources(),pretendToBeVisual:true,
+      virtualConsole:createConsole(projectionErrors),beforeParse(w){
+        w.BroadcastChannel=TestChannel;
+        w.requestAnimationFrame=()=>0;
+        w.Date.now=()=>Date.parse("2026-11-21T13:35:00Z");
+        w.fetch=async()=>Response.json(publishedPayload);
+      }
+    });
+    const projected=projection.window;
+    const ctl=id=>query(win,"#screen-"+id);
+    ctl("category").value="Masculino + Femenino";
+    ctl("category").dispatchEvent(new win.Event("change"));
+    ctl("view").value="horario";ctl("pin").click();
+    const count=()=>projected.document.querySelectorAll("tbody tr").length;
+    await waitFor(()=>query(projected,"#mode").textContent==="Masculino + Femenino" && count()===15,"pantalla conjunta enlazada");
+    select(win,"Masculino");tab(win,"resultados");
+    save("MG01",[[21,20]]);
+    await waitFor(()=>count()===14,"Guardar marcador retira el partido por BroadcastChannel");
+    save("MG01",[[21,21]]);
+    await wait(50);assert.equal(count(),14,"El resultado inválido conserva el último marcador");
+    save("MG01",[["",""]]);
+    await waitFor(()=>count()===15,"Anular el marcador recupera el próximo partido");
+    assert.deepEqual(projectionErrors,[]);
     const publicErrors=[];
     publicPage = await JSDOM.fromURL(baseUrl + "/index.html", {
       runScripts:"dangerously", resources:new LocalResources(), pretendToBeVisual:true,
@@ -339,6 +376,8 @@ async function run() {
       "publicación simulada, web pública, vista embebida y scroll único en WordPress"
     );
   } finally {
+    projection?.window.close();
+    channels.forEach(channel=>channel.close());
     if (parentPage) parentPage.window.close();
     if (embedPage) embedPage.window.close();
     if (publicPage) publicPage.window.close();

@@ -3,9 +3,13 @@
   let settings=readSetup();
   let order=[...settings.order,...Object.keys(viewLabels).filter(v=>!settings.order.includes(v))];
   const send=(action={})=>link.send({type:"setup",setup:settings,...action});
-  const link=projectionLink(msg=>{if(msg?.type==="ready")send();},ok=>{
+  function sendScores(){
+    if(typeof state === "undefined" || !state || !baseline)return;
+    link.send({type:"live-scores",data:state,base:JSON.parse(baseline)});
+  }
+  const link=projectionLink(msg=>{if(msg?.type==="ready"){send();sendScores();}},ok=>{
     byId("status").textContent=ok?"Proyector conectado":"Proyector desconectado";
-    if(ok)send();
+    if(ok){send();sendScores();}
   });
   function save(action){
     localStorage.setItem(screenKey,JSON.stringify(settings));send(action);
@@ -42,6 +46,10 @@
   byId("pin").onclick=()=>{settings.auto=false;settings.fixed=byId("view").value;byId("auto").checked=false;save({page:byId("view").value});};
   byId("offer").onclick=async()=>{try{byId("code").value=await link.offer();byId("code").select();byId("status").textContent="Copia el código en el proyector.";}catch{byId("status").textContent="Este navegador no ha podido iniciar la conexión.";}};
   byId("connect").onclick=async()=>{try{byId("status").textContent="Conectando…";await link.finish(byId("reply").value);}catch{byId("status").textContent="Revisa la respuesta del proyector.";}};
-  window.addEventListener("torneo-publicado",e=>link.send({type:"published",data:e.detail}));
+  window.addEventListener("marcador-guardado",sendScores);
+  window.addEventListener("torneo-publicado",e=>{
+    link.send({type:"published",data:e.detail});
+    sendScores();
+  });
   paint();
 })();

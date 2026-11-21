@@ -6,6 +6,7 @@ const pavilionClock=new Intl.DateTimeFormat("sv-SE", {
   timeZone:"Europe/Madrid",year:"numeric",month:"2-digit",day:"2-digit",
   hour:"2-digit",minute:"2-digit",hourCycle:"h23"
 });
+let liveScores = null;
 function upcomingMatches(games, date, now){
   const start=pavilionClock.format(now-30*60000);
   const end=pavilionClock.format(now+3600000);
@@ -23,6 +24,15 @@ function move(step){
   resetMotion();render();
 }
 function update(msg){
+  if(msg?.type==="live-scores"){
+    try {
+      checkEvent(msg.base);checkEvent(msg.data);
+      acceptData(msg.base);
+      liveScores = {data:msg.data,baseTime:msg.base.meta.updatedAt};
+      render();
+    } catch {}
+    return;
+  }
   if(msg?.type==="published"){acceptData(msg.data);return;}
   if(msg?.type!=="setup" || !validSetup(msg.setup))return;
   const changed=setup.category!==msg.setup.category;
@@ -66,7 +76,16 @@ function render(){
     }else{
       games=fixturesFor(category).map(m=>comp.matches.get(m.id));
     }
-    if(view==="horario")games=upcomingMatches(games,data.meta.date,Date.now());
+    if(view==="horario"){
+      // La mesa transmite solo marcadores guardados. Una publicación más nueva
+      // prevalece sobre la copia local, incluso si procede de otra mesa.
+      if(liveScores && liveScores.baseTime >= data.meta.updatedAt){
+        const categories = combined ? afternoonCategories : [category];
+        games=categories.flatMap(cat => [...competition(liveScores.data.categories[cat],cat).matches.values()])
+          .sort((a,b)=>a.match.start.localeCompare(b.match.start) || a.match.court-b.match.court);
+      }
+      games=upcomingMatches(games,data.meta.date,Date.now());
+    }
     if(view==="resultados"){
       games=Object.keys(div.results).reverse().map(id=>comp.matches.get(id)).filter(g=>g?.winner);
     }
