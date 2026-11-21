@@ -5,7 +5,7 @@
     "venue": "Pickleball Almanzor",
     "date": "2026-11-21",
     "courts": 7,
-    "updatedAt": "2026-11-21T06:26:35.660Z"
+    "updatedAt": "2026-11-21T06:26:44.861Z"
   },
   "categories": {
     "Mixto": {
@@ -162,7 +162,21 @@
           "p2": "Alex Percey"
         }
       ],
-      "groups": null,
+      "groups": {
+        "MA1": "M02",
+        "MA2": "M06",
+        "MA3": "M11",
+        "MA4": "M01",
+        "MA5": "M04",
+        "MB1": "M13",
+        "MB2": "M07",
+        "MB3": "M08",
+        "MB4": "M05",
+        "MC1": "M10",
+        "MC2": "M03",
+        "MC3": "M12",
+        "MC4": "M09"
+      },
       "results": {},
       "confirmed": {}
     },
