@@ -194,8 +194,8 @@ async function run() {
     save("FS2",[[21,0],[21,0]]);
     save("FFIN",[[20,21],[13,21]]);
     assert.match(win.buildSummary(),/FFIN Final/);
-    save("FBR",[[21,20],[21,0]]);
-    assert.match(win.buildSummary(),/FBR Bronce/);
+    assert.equal(query(win,'[data-match="FBR"]'),null);
+    assert.doesNotMatch(win.buildSummary(),/FBR Bronce/);
     select(win,"Masculino");tab(win,"inscripcion");query(win,"#btn-draw").click();
     select(win,"Mixto");tab(win,"inscripcion");query(win,"#btn-draw").click();
     assert.deepEqual(Object.keys(win.state.categories.Mixto.groups).map(s => s[1]).sort(),
@@ -211,7 +211,7 @@ async function run() {
         return Response.json({sha:"test-sha",content:Buffer.from(JSON.stringify(publishedPayload)).toString("base64")});
       }
       apiPuts++;
-      if (conflict) { conflict=false; publishedPayload.categories.Femenino.results.FFIN.sets[0].s1="18"; return new Response(null, {status:409}); }
+      if (conflict) { conflict=false; publishedPayload.categories.Femenino.results.FS2.sets[0].s2="2"; return new Response(null, {status:409}); }
       const request = JSON.parse(init.body);
       assert.equal(request.sha,"test-sha");
       assert.equal(request.branch,"main");
@@ -234,29 +234,29 @@ async function run() {
     assert.equal(win.state.meta.updatedAt,publishedPayload.meta.updatedAt);
     assert.equal(pendingInput.value,"9","La sincronización no borra un tanteo aún sin guardar");
     tab(win,"clasificados");
-    win.state.categories.Femenino.results.FBR.sets[0].s2="19";win.markDirty();
-    publishedPayload.categories.Femenino.results.FFIN.sets[0].s1="19";
+    win.state.categories.Femenino.results.FFIN.sets[0].s1="19";win.markDirty();
+    publishedPayload.categories.Femenino.results.FS2.sets[0].s2="1";
     await win.publish();
     assert.equal(apiPuts,2,"Dos marcadores distintos se publican juntos");
     assert.equal(win.dirty,false);
-    assert.equal(publishedPayload.categories.Femenino.results.FBR.sets[0].s2,"19");
     assert.equal(publishedPayload.categories.Femenino.results.FFIN.sets[0].s1,"19");
+    assert.equal(publishedPayload.categories.Femenino.results.FS2.sets[0].s2,"1");
     assert.deepEqual(JSON.parse(win.baseline),publishedPayload);
-    win.state.categories.Femenino.results.FBR.sets[0].s2="18";win.markDirty();
-    publishedPayload.categories.Femenino.results.FBR.sets[0].s2="17";
+    win.state.categories.Femenino.results.FFIN.sets[0].s1="18";win.markDirty();
+    publishedPayload.categories.Femenino.results.FFIN.sets[0].s1="17";
     await win.publish();
     assert.equal(apiPuts,2,"Un conflicto sobre el mismo partido conserva el borrador");
     assert.equal(win.dirty,true);
-    assert.equal(win.state.categories.Femenino.results.FBR.sets[0].s2,"18");
-    publishedPayload.categories.Femenino.results.FBR.sets[0].s2="19";
-    win.state.categories.Femenino.results.FBR.sets[0].s2="18";
+    assert.equal(win.state.categories.Femenino.results.FFIN.sets[0].s1,"18");
+    publishedPayload.categories.Femenino.results.FFIN.sets[0].s1="19";
+    win.state.categories.Femenino.results.FFIN.sets[0].s1="18";
     win.markDirty();
     conflict=true;
     await win.publish();
     assert.equal(apiPuts,4,"El conflicto 409 reintenta con la última publicación");
     assert.equal(win.dirty,false);
     assert.equal(publishedPayload.categories.Femenino.results.FFIN.sets[0].s1,"18");
-    assert.equal(publishedPayload.categories.Femenino.results.FBR.sets[0].s2,"18");
+    assert.equal(publishedPayload.categories.Femenino.results.FS2.sets[0].s2,"2");
     const altered=JSON.parse(JSON.stringify(publishedPayload));
     [altered.categories.Femenino.groups.F1,altered.categories.Femenino.groups.F2]=
       [altered.categories.Femenino.groups.F2,altered.categories.Femenino.groups.F1];
@@ -307,8 +307,9 @@ async function run() {
     select(publicWindow,"Femenino");
     tab(publicWindow,"cuadros");
     assert.match(query(publicWindow,"#champ-banner").textContent,/Campeones · Femenino/);
-    assert.equal(publicWindow.document.querySelectorAll("#v-cuadros [data-match]").length,4);
-    assert.equal(publicWindow.document.querySelectorAll("#v-horario [data-match]").length,14);
+    assert.equal(publicWindow.document.querySelectorAll("#v-cuadros [data-match]").length,3);
+    assert.equal(publicWindow.document.querySelectorAll("#v-horario [data-match]").length,13);
+    assert.equal(publicWindow.document.querySelector('[data-match="FBR"]'),null);
     assert.ok(query(publicWindow,"#v-clas").textContent.includes(firstName.value));
     select(publicWindow,"Masculino");
     assert.equal(query(publicWindow,"#champ-banner").textContent,"");

@@ -9,7 +9,7 @@ const api = vm.runInThisContext("(function(){" + scripts.join("\n") +
   "\nreturn {FIXTURES,GROUP_SLOTS,checkEvent,checkRoster,importPairs,drawDivision,competition,confirmGroup,withScore,rankBlocks,isGroup,matchRules};})()");
 const {FIXTURES, GROUP_SLOTS, checkEvent, checkRoster, importPairs, drawDivision, competition, confirmGroup, withScore, rankBlocks, isGroup, matchRules} = api;
 const data = checkEvent(JSON.parse(fs.readFileSync(path.join(root, "datos-almanzor-2026.json"))));
-const expected = {Mixto:[13,22,34], Masculino:[13,22,35], Femenino:[5,10,14]};
+const expected = {Mixto:[13,22,34], Masculino:[13,22,35], Femenino:[5,10,13]};
 for (const name of Object.keys(expected)) data.categories[name] = {pairs:[],groups:null,confirmed:{},results:{}};
 const seed = structuredClone(data);
 const roster = {eventId:data.eventId, categories:{}};
@@ -22,8 +22,10 @@ assert.throws(() => checkRoster(Array(13).fill(roster.categories.Mixto[0]), "Mix
 assert.throws(() => importPairs(data, {...roster, categories:{...roster.categories, Femenino:[]}}));
 assert.deepEqual(data, seed, "La importación fallida debe ser atómica");
 importPairs(data, roster);
-assert.equal(FIXTURES.length, 83);
-assert.equal(new Set(FIXTURES.map(m => m.id)).size, 83);
+assert.equal(FIXTURES.length, 82);
+assert.equal(new Set(FIXTURES.map(m => m.id)).size, 82);
+assert.ok(!FIXTURES.some(m => m.id === "FBR"), "No hay bronce femenino");
+assert.ok(FIXTURES.some(m => m.id === "MBR"), "El bronce masculino se conserva");
 const minutes = value => value.split(":").reduce((h,m) => Number(h)*60+Number(m), 0);
 for (const [i, game] of FIXTURES.entries()) {
   assert.ok(game.court >= 1 && game.court <= 7);
@@ -91,7 +93,7 @@ for (let trial=0; trial<12; trial++) {
     const changed = withScore(division,category,semi.id,[opposite,opposite,{s1:"",s2:""}]);
     assert.ok(changed.removed.includes(final.id));
     const bronze = games.find(m => m.stage === "Bronce");
-    if (category === "Mixto") {
+    if (category !== "Masculino") {
       assert.equal(bronze, undefined);
       assert.deepEqual(changed.removed, [final.id]);
     } else {
@@ -103,11 +105,11 @@ for (let trial=0; trial<12; trial++) {
     assert.throws(() => withScore(division,category,semi.id,[opposite,opposite,opposite]));
     assert.ok([...appearances.values()].every(games => games.length >= 4 && games.length <= 8));
     if (category === "Femenino") {
-      assert.deepEqual([...appearances.values()].map(a => a.length).sort(),[4,6,6,6,6]);
+      assert.deepEqual([...appearances.values()].map(a => a.length).sort(),[4,5,5,6,6]);
     }
   }
 }
 const a = {id:"a",w:2,diff:3,pf:86}, b={id:"b",w:2,diff:3,pf:90}, c={id:"c",w:2,diff:0,pf:92};
 assert.deepEqual(rankBlocks([b,c,a]),[[b],[a],[c]]);
 assert.deepEqual(rankBlocks([b,c,a].map(row => ({...row,diff:0,pf:90}))).map(g=>g.length),[3]);
-console.log("OK · 83 partidos, tres modalidades, 12 torneos completos, descansos, desempates y correcciones");
+console.log("OK · 82 partidos, tres modalidades, 12 torneos completos, descansos, desempates y correcciones");

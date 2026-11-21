@@ -21,6 +21,10 @@ w.fetch=async()=>({ok:true,json:async()=>sample});
 w.Date.now=()=>Date.parse("2026-11-21T08:55:00Z");
 const fixtures=["torneo.js","calendario-almanzor.js","almanzor.js","pabellon-comun.js","pabellon.js"];
 w.eval(fixtures.map(read).join("\n"));
+const femalePages=w.eval('projectionPages({category:"Femenino",order:["cuadro"]})');
+assert.ok(!femalePages.some(p=>p.round==="Bronce"),"La pantalla no debe proyectar bronce femenino");
+const malePages=w.eval('projectionPages({category:"Masculino",order:["cuadro"]})');
+assert.ok(malePages.some(p=>p.round==="Bronce"),"El bronce masculino sigue en pantalla");
 (async()=>{
   await new Promise(r=>setImmediate(r));
   const settings={category:"Mixto",order:["clas","horario","cuadro","resultados"],auto:true,paused:false,seconds:10};
