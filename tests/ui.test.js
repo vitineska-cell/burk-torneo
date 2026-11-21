@@ -211,7 +211,7 @@ async function run() {
         return Response.json({sha:"test-sha",content:Buffer.from(JSON.stringify(publishedPayload)).toString("base64")});
       }
       apiPuts++;
-      if (conflict) return new Response(null, {status:409});
+      if (conflict) { conflict=false; publishedPayload.categories.Femenino.results.FFIN.sets[0].s1="18"; return new Response(null, {status:409}); }
       const request = JSON.parse(init.body);
       assert.equal(request.sha,"test-sha");
       assert.equal(request.branch,"main");
@@ -219,19 +219,49 @@ async function run() {
       return Response.json({});
     };
     query(win,"#btn-pub").click();
-    await waitFor(() => apiPuts === 1 && !query(win,"#btn-pub").disabled, "publicación simulada");
+    await waitFor(() => apiPuts === 1 || !query(win,"#btn-pub").disabled, "publicación simulada");
+    assert.equal(apiPuts,1,query(win,"#toast").textContent);
     assert.equal(win.dirty,false);
     assert.deepEqual(publishedPayload,JSON.parse(JSON.stringify(win.state)));
     query(win,"#btn-load").click();
     await waitFor(() => apiGets===2 && !query(win,"#btn-load").disabled,"recarga");
-    conflict=true;win.markDirty();
+    select(win,"Femenino");tab(win,"resultados");
+    const pendingInput=query(win,'[data-match="FG01"] [data-set="0"][data-field="s1"]');
+    pendingInput.value="9";
+    publishedPayload.meta.updatedAt="2026-11-21T16:00:00.000Z";
     await win.publish();
-    assert.equal(apiPuts,2,"Un conflicto no debe provocar una sobrescritura automática");
+    assert.equal(apiPuts,1,"Una actualización solo de fecha sincroniza sin reescribir los marcadores");
+    assert.equal(win.state.meta.updatedAt,publishedPayload.meta.updatedAt);
+    assert.equal(pendingInput.value,"9","La sincronización no borra un tanteo aún sin guardar");
+    tab(win,"clasificados");
+    win.state.categories.Femenino.results.FBR.sets[0].s2="19";win.markDirty();
+    publishedPayload.categories.Femenino.results.FFIN.sets[0].s1="19";
+    await win.publish();
+    assert.equal(apiPuts,2,"Dos marcadores distintos se publican juntos");
+    assert.equal(win.dirty,false);
+    assert.equal(publishedPayload.categories.Femenino.results.FBR.sets[0].s2,"19");
+    assert.equal(publishedPayload.categories.Femenino.results.FFIN.sets[0].s1,"19");
+    assert.deepEqual(JSON.parse(win.baseline),publishedPayload);
+    win.state.categories.Femenino.results.FBR.sets[0].s2="18";win.markDirty();
+    publishedPayload.categories.Femenino.results.FBR.sets[0].s2="17";
+    await win.publish();
+    assert.equal(apiPuts,2,"Un conflicto sobre el mismo partido conserva el borrador");
     assert.equal(win.dirty,true);
-    publishedPayload.meta.updatedAt += "-otra-mesa";
+    assert.equal(win.state.categories.Femenino.results.FBR.sets[0].s2,"18");
+    publishedPayload.categories.Femenino.results.FBR.sets[0].s2="19";
+    win.state.categories.Femenino.results.FBR.sets[0].s2="18";
+    win.markDirty();
+    conflict=true;
     await win.publish();
-    assert.equal(apiPuts,2,"La mesa desactualizada debe conservar el borrador sin publicar");
-    publishedPayload=JSON.parse(JSON.stringify(win.state));
+    assert.equal(apiPuts,4,"El conflicto 409 reintenta con la última publicación");
+    assert.equal(win.dirty,false);
+    assert.equal(publishedPayload.categories.Femenino.results.FFIN.sets[0].s1,"18");
+    assert.equal(publishedPayload.categories.Femenino.results.FBR.sets[0].s2,"18");
+    const altered=JSON.parse(JSON.stringify(publishedPayload));
+    [altered.categories.Femenino.groups.F1,altered.categories.Femenino.groups.F2]=
+      [altered.categories.Femenino.groups.F2,altered.categories.Femenino.groups.F1];
+    assert.throws(()=>win.mergePublished(publishedPayload,publishedPayload,altered),
+      /cruce.*ha cambiado/,"Un sorteo alterado no puede publicar actas con rivales equivocados");
     assert.deepEqual(adminErrors,[]);
 
     const projectionErrors=[];

@@ -249,35 +249,99 @@ function apiGet(cfg){
     });
 }
 
+// Reconciliación de tres versiones: borrador original, cambios de esta mesa y
+// última publicación. Cada acta se trata como una unidad para no mezclar sets.
+function mergePublished(base, local, remote) {
+  const same = (a,b) => JSON.stringify(a) === JSON.stringify(b);
+  function choose(a,b,c,label) {
+    if (same(b,a)) return c;
+    if (same(c,a) || same(b,c)) return b;
+    throw Error("Conflicto en " + label + ". Conservamos tus cambios locales; revisa ese dato antes de cargar la última versión.");
+  }
+  function fields(a,b,c,label) {
+    const out = {};
+    for (const key of new Set([...Object.keys(a),...Object.keys(b),...Object.keys(c)])) {
+      const value = choose(a[key],b[key],c[key],label + " " + key);
+      if (value !== undefined) out[key] = value;
+    }
+    return out;
+  }
+  const result = JSON.parse(JSON.stringify(remote));
+  result.meta = fields(base.meta,local.meta,remote.meta,"evento");
+  result.meta.updatedAt = remote.meta.updatedAt;
+  result.raffle = fields(base.raffle,local.raffle,remote.raffle,"sorteo");
+  for (const name of categoryNames) {
+    const a=base.categories[name], b=local.categories[name], c=remote.categories[name];
+    result.categories[name] = {...c,
+      pairs:choose(a.pairs,b.pairs,c.pairs,name+" parejas"),
+      groups:choose(a.groups,b.groups,c.groups,name+" grupos"),
+      confirmed:fields(a.confirmed,b.confirmed,c.confirmed,name+" clasificación"),
+      results:fields(a.results,b.results,c.results,name+" partido")
+    };
+  }
+  checkEvent(result);
+  for (const name of categoryNames) {
+    const division=result.categories[name], view=competition(division,name);
+    for (const [id, score] of Object.entries(division.results)) {
+      const game=view.matches.get(id);
+      if (!game || !game.score || !game.status.complete ||
+          game.a.id !== score.aId || game.b.id !== score.bId) {
+        throw Error("El cruce " + id + " ha cambiado. Conservamos tus cambios locales; revisa el cuadro antes de publicar.");
+      }
+    }
+    for (const group of Object.keys(division.confirmed)) {
+      if (!view.tables[group]?.confirmed) throw Error("La clasificación del grupo " + group + " ha cambiado. Revisa los clasificados.");
+    }
+  }
+  return result;
+}
+
 async function publish() {
   const cfg = getCfg();
   if (!cfg) { showCfg(true); toast("Configura la conexión con GitHub para publicar."); return; }
   if (!state || !baseline) return;
   const snapshot = JSON.stringify(state);
-  const outgoing = JSON.parse(snapshot);
-  outgoing.meta.updatedAt = new Date().toISOString();
+  const local = JSON.parse(snapshot), base = JSON.parse(baseline);
+  const visibleGames = (activeTab === "resultados" || activeTab === "cuadros") && state.categories[category].groups
+    ? competition(state.categories[category],category).matches : null;
+  const scoreDraft = visibleGames && [...document.querySelectorAll("#v-"+activeTab+" [data-match] [data-set]")].some(input => {
+    const id=input.closest("[data-match]").dataset.match;
+    const stored=visibleGames.get(id)?.score?.sets[Number(input.dataset.set)]?.[input.dataset.field] ?? "";
+    return input.value !== stored;
+  });
   const button = $("btn-pub");
   button.disabled = true;
   $("btn-load").disabled = true;
   try {
-    const current = await apiGet(cfg);
-    if (!current || JSON.stringify(checkEvent(JSON.parse(b64decode(current.content)))) !== baseline) {
-      throw Error("La versión publicada ha cambiado. Revisa los datos antes de cargar la última versión.");
+    let outgoing, reply, synchronized = false;
+    for (let attempt=0; attempt<3; attempt++) {
+      const current = await apiGet(cfg);
+      if (!current) throw Error("No se encuentra el torneo publicado.");
+      const remote = checkEvent(JSON.parse(b64decode(current.content)));
+      outgoing = mergePublished(base,local,remote);
+      synchronized = JSON.stringify(remote) !== baseline;
+      if (JSON.stringify(outgoing) === JSON.stringify(remote)) { reply=null; break; }
+      outgoing.meta.updatedAt = new Date().toISOString();
+      reply = await fetch(apiUrl(cfg), {
+        method:"PUT", headers:apiHeaders(cfg), body:JSON.stringify({
+          branch:"main", sha:current.sha, message:"Actualizar torneo BÜRK Almanzor",
+          content:b64encode(JSON.stringify(outgoing, null, 2) + "\n")
+        })
+      });
+      if (reply.status !== 409 && reply.status !== 422) break;
     }
-    const reply = await fetch(apiUrl(cfg), {
-      method:"PUT", headers:apiHeaders(cfg), body:JSON.stringify({
-        branch:"main", sha:current.sha, message:"Actualizar torneo BÜRK Almanzor",
-        content:b64encode(JSON.stringify(outgoing, null, 2) + "\n")
-      })
-    });
-    if (reply.status === 409 || reply.status === 422) throw Error("Otra mesa ha publicado cambios. Revisa la última versión.");
-    if (!reply.ok) throw Error("GitHub ha devuelto " + reply.status + ". Revisa la conexión y los permisos.");
-    dirty = JSON.stringify(state) !== snapshot;
-    state.meta.updatedAt = outgoing.meta.updatedAt;
+    if (reply && (reply.status === 409 || reply.status === 422)) throw Error("Otra mesa está publicando a la vez. Vuelve a pulsar Guardar y publicar.");
+    if (reply && !reply.ok) throw Error("GitHub ha devuelto " + reply.status + ". Revisa la conexión y los permisos.");
+    state = mergePublished(local,state,outgoing);
     baseline = JSON.stringify(outgoing);
+    dirty = JSON.stringify(state) !== baseline;
     window.dispatchEvent(new CustomEvent("torneo-publicado",{detail:outgoing}));
     lastPublished = new Date().toLocaleTimeString("es-ES");
-    persistLocal(); updateStatus(); toast("✓ Publicado en GitHub.");
+    persistLocal();
+    if (!scoreDraft) render();
+    updateStatus(); toast(dirty ? "✓ Publicado. Hay cambios nuevos pendientes de publicar." :
+      (scoreDraft ? "✓ Sincronizado. Guarda los puntos que estabas escribiendo antes de cambiar de vista." :
+      (reply ? (synchronized ? "✓ Resultados sincronizados y publicados." : "✓ Publicado en GitHub.") : "✓ Panel sincronizado con GitHub.")));
   } catch (error) { toast(error.message, 6500); }
   finally { button.disabled = false; $("btn-load").disabled = false; }
 }
