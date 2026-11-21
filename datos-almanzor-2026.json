@@ -5,7 +5,7 @@
     "venue": "Pickleball Almanzor",
     "date": "2026-11-21",
     "courts": 7,
-    "updatedAt": "2026-11-21T06:26:44.861Z"
+    "updatedAt": "2026-11-21T06:26:55.335Z"
   },
   "categories": {
     "Mixto": {
@@ -208,7 +208,13 @@
           "p2": "Blanca de Dorremochea Zaldívar"
         }
       ],
-      "groups": null,
+      "groups": {
+        "F1": "F02",
+        "F2": "F01",
+        "F3": "F03",
+        "F4": "F05",
+        "F5": "F04"
+      },
       "results": {},
       "confirmed": {}
     }
