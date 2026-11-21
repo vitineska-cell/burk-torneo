@@ -1,0 +1,16 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Pantalla del pabellón · BÜRK Almanzor</title>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;600;700&family=Big+Shoulders+Display:wght@800;900&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box}body{margin:0;background:#0a0a0b;color:#fafafa;font:clamp(18px,1.65vw,42px)/1.3 Archivo,Arial,sans-serif;height:100vh;height:100dvh;display:flex;flex-direction:column;padding:2vh 3vw}
+header{display:flex;align-items:end;gap:1em;justify-content:space-between;border-bottom:3px solid #b8933a;padding-bottom:1vh}
+h1{font:900 clamp(38px,4.2vw,100px)/1 'Big Shoulders Display',sans-serif;margin:.15em 0}#mode,.time{color:#e3bf64;font-weight:700}
+#frame{min-height:0;flex:1;overflow:auto;scrollbar-width:none;overflow-anchor:none}table{border-collapse:separate;border-spacing:0;width:100%;font-variant-numeric:tabular-nums}td,th{padding:.48em .36em;text-align:left;border-bottom:1px solid #39393c}thead th{position:sticky;top:0;background:#19191c;color:#dedee2;font-size:.78em;z-index:1}tbody tr:nth-child(even){background:#141416}td.num{text-align:center}td.time{white-space:nowrap}td.pairs{width:65%}.pairs span{display:block}.pairs span+span{color:#ddd;margin-top:.2em}small{font-size:.72em;color:#ccc}footer{display:flex;align-items:center;justify-content:space-between;gap:1em;padding-top:.6em;color:#c1c1c6;font-size:.68em}button,textarea{font:inherit;color:inherit;background:#202024;border:1px solid #646468;padding:.4em .7em}dialog{color:white;background:#19191b;max-width:40em}dialog textarea{width:100%}button{cursor:pointer}#frame p{padding:1em 0}
+</style></head><body>
+<header><div><small>Torneo BÜRK Almanzor</small><h1 id="heading">Clasificación</h1></div><strong id="mode">Mixto</strong></header>
+<main id="frame"></main>
+<footer><span id="sync">Cargando datos…</span><div><button id="pair">Vincular mesa</button> <button id="full">Pantalla completa</button></div></footer>
+<dialog id="pairing"><h2>Vincular con otro ordenador</h2><p>Pega el código que aparece en el panel de la mesa.</p><textarea id="offer" aria-label="Código de la mesa"></textarea><button id="answer">Generar respuesta</button><textarea id="reply" readonly aria-label="Respuesta para la mesa"></textarea><p id="linkStatus"></p><button id="closePair">Cerrar</button></dialog>
+<script src="torneo.js?rally=1"></script><script src="calendario-almanzor.js?rally=1"></script><script src="almanzor.js?rally=1"></script>
+<script src="pabellon-comun.js"></script><script src="pabellon.js"></script></body></html>

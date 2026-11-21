@@ -158,6 +158,23 @@ main{padding-top:16px}
     <div class="note">La configuración se guarda solo en este navegador de este ordenador. El token es tu llave para publicar: no lo compartas con nadie.</div>
   </div>
 
+  <details class="cfg" id="screen-controls">
+    <summary>Pantalla del pabellón</summary>
+    <div class="row"><a class="btn" href="pabellon.html" target="_blank" rel="noopener">Abrir proyección</a>
+    <label>Modalidad proyectada <select id="screen-category"></select></label>
+    <label>Segundos por vista <input type="number" id="screen-seconds" min="3" max="300" value="10" style="width:6em"></label></div>
+    <div id="screen-order"></div>
+    <div class="row"><label><input type="checkbox" id="screen-auto" style="width:auto"> Rotación automática</label>
+    <label><input type="checkbox" id="screen-paused" style="width:auto"> Pausar desplazamiento y tiempo</label></div>
+    <div class="row"><button class="btn" id="screen-prev">Anterior</button><button class="btn" id="screen-next">Siguiente</button>
+    <label>Vista para fijar <select id="screen-view"></select></label><button class="btn" id="screen-pin">Fijar vista</button></div>
+    <details><summary>Conectar otro ordenador de la misma red</summary>
+    <p>En este navegador la conexión es automática. Para otro equipo, genera un código, pégalo en «Vincular mesa» en la proyección y trae aquí la respuesta.</p>
+    <button class="btn" id="screen-offer">Generar código</button><textarea readonly id="screen-code" aria-label="Código para el proyector"></textarea>
+    <textarea id="screen-reply" aria-label="Respuesta del proyector"></textarea><button class="btn" id="screen-connect">Conectar</button>
+    <span id="screen-status" role="status"></span></details>
+  </details>
+
   <nav class="tabs" id="categories" aria-label="Modalidad"></nav>
   <nav class="tabs" id="tabs">
     <button class="tab tab-on" data-tab="inscripcion">Inscripción</button>
@@ -255,6 +272,7 @@ async function publish() {
     dirty = JSON.stringify(state) !== snapshot;
     state.meta.updatedAt = outgoing.meta.updatedAt;
     baseline = JSON.stringify(outgoing);
+    window.dispatchEvent(new CustomEvent("torneo-publicado",{detail:outgoing}));
     lastPublished = new Date().toLocaleTimeString("es-ES");
     persistLocal(); updateStatus(); toast("✓ Publicado en GitHub.");
   } catch (error) { toast(error.message, 6500); }
@@ -559,5 +577,7 @@ try {
 if (state && dirty) { render(); updateStatus(); }
 else { if (state) render(); loadPublished(); }
 </script>
+<script src="pabellon-comun.js"></script>
+<script src="pabellon-mesa.js"></script>
 </body>
 </html>
