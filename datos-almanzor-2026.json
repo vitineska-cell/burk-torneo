@@ -5,7 +5,7 @@
     "venue": "Pickleball Almanzor",
     "date": "2026-11-21",
     "courts": 7,
-    "updatedAt": "2026-11-21T13:30:02.511Z"
+    "updatedAt": "2026-11-21T13:46:28.569Z"
   },
   "categories": {
     "Mixto": {
@@ -562,7 +562,18 @@
         "MC3": "M12",
         "MC4": "M09"
       },
-      "results": {},
+      "results": {
+        "MG05": {
+          "aId": "M10",
+          "bId": "M09",
+          "sets": [
+            {
+              "s1": "21",
+              "s2": "7"
+            }
+          ]
+        }
+      },
       "confirmed": {}
     },
     "Femenino": {
