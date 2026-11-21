@@ -14,12 +14,8 @@ function upcomingMatches(games, date, now){
     return !game.winner && kickoff>=start && kickoff<=end;
   });
 }
-function rounds(cat){
-  return [...new Set(fixturesFor(cat).filter(m=>!isGroup(m)).map(m=>m.stage.split(" ")[0]))];
-}
-function pages(){
-  return setup.order.flatMap(k=>k==="cuadro"?rounds(setup.category).map(r=>"cuadro/"+r):[k]);
-}
+let playlist = projectionPages(setup);
+function pages(){return playlist.map(p => p.id);}
 function resetMotion(){frame.scrollTop=position=elapsed=bottomTime=0;lastFrame=null;}
 function move(step){
   const list=pages();
@@ -31,6 +27,7 @@ function update(msg){
   if(msg?.type!=="setup" || !validSetup(msg.setup))return;
   const changed=setup.category!==msg.setup.category;
   setup=msg.setup;
+  playlist=projectionPages(setup);
   const list=pages();
   if(changed || !list.includes(page)){page=list[0];resetMotion();}
   const wanted=msg.page || (!setup.auto && !msg.step && setup.fixed);
@@ -40,11 +37,13 @@ function update(msg){
 const link=projectionLink(update,ok=>{el("linkStatus").textContent=ok?"Mesa conectada":"Conexión cerrada";if(ok)el("pairing").close();});
 function render(){
   page ||= (!setup.auto && pages().includes(setup.fixed) ? setup.fixed : pages()[0]);
-  const [view,round]=page.split("/");
+  const {view, round, category}=playlist.find(p => p.id === page);
   el("heading").textContent=viewLabels[view]+(round?" · "+round:"");
-  el("mode").textContent=setup.category;
+  el("mode").textContent=category;
   if(!data)return;
-  const div=data.categories[setup.category], comp=competition(div,setup.category);
+  const combined = category === afternoonMode;
+  const div = data.categories[category];
+  const comp = combined ? null : competition(div,category);
   let html;
   if(view==="clas"){
     const columns=["Puesto","Pareja","PJ","PG","PF","PC","DIF"];
@@ -60,7 +59,13 @@ function render(){
     }).join("") || "<p>Pendiente del sorteo de grupos.</p>";
   }else{
     const rows=[];
-    let games=fixturesFor(setup.category).map(m=>comp.matches.get(m.id));
+    let games;
+    if(combined){
+      games=afternoonCategories.flatMap(cat => [...competition(data.categories[cat],cat).matches.values()])
+        .sort((a,b) => a.match.start.localeCompare(b.match.start) || a.match.court-b.match.court);
+    }else{
+      games=fixturesFor(category).map(m=>comp.matches.get(m.id));
+    }
     if(view==="horario")games=upcomingMatches(games,data.meta.date,Date.now());
     if(view==="resultados"){
       games=Object.keys(div.results).reverse().map(id=>comp.matches.get(id)).filter(g=>g?.winner);
@@ -74,7 +79,7 @@ function render(){
         return "<span>"+name+"</span>";
       }).join("");
       const score=g.status.sets.filter(s=>s.s1!=="" && s.s2!=="").map(s=>s.s1+"–"+s.s2).join(" / ");
-      rows.push([g.match.start,g.match.court,names,view==="horario"?escHtml(g.match.stage):score||"Pendiente"]);
+      rows.push([g.match.start,g.match.court,names,view==="horario"?escHtml((combined ? g.match.category+" · " : "")+g.match.stage):score||"Pendiente"]);
     }
     const empty=view==="resultados"?"Todavía no hay resultados publicados." : "No hay partidos pendientes programados en los últimos 30 minutos ni en los próximos 60 minutos.";
     html=rows.length?"<table><thead><tr>"+heads.map(h=>"<th>"+h+"</th>").join("")+"</tr></thead><tbody>"+rows.map(row=>"<tr>"+row.map((v,i)=>{
@@ -110,7 +115,7 @@ function acceptData(next){
 }
 async function refresh(){
   try{const r=await fetch(DATA_FILE+"?t="+Date.now(),{cache:"no-store"});if(!r.ok)throw Error();acceptData(await r.json());}
-  catch{if(page==="horario" && data)render();el("sync").textContent=data?"Sin conexión · mostrando la última actualización":"Esperando conexión…";}
+  catch{if(data && playlist.find(p=>p.id===page)?.view==="horario")render();el("sync").textContent=data?"Sin conexión · mostrando la última actualización":"Esperando conexión…";}
   finally{setTimeout(refresh,10000);}
 }
 el("pair").onclick=()=>el("pairing").showModal();

@@ -18,10 +18,9 @@
     byId("order").innerHTML=order.map((v,i)=>'<div class="row"><label><input type="checkbox" style="width:auto" data-view="'+v+'" '+(settings.order.includes(v)?"checked":"")+'> '+viewLabels[v]+'</label>'+
       '<button class="btn" data-up="'+v+'" aria-label="Subir '+viewLabels[v]+'" '+(i===0?"disabled":"")+'>↑</button>'+
       '<button class="btn" data-down="'+v+'" aria-label="Bajar '+viewLabels[v]+'" '+(i===order.length-1?"disabled":"")+'>↓</button></div>').join("");
-    const stages=[...new Set(fixturesFor(settings.category).filter(m=>!isGroup(m)).map(m=>m.stage.split(" ")[0]))];
-    byId("view").innerHTML=settings.order.flatMap(v=>v==="cuadro"?stages.map(r=>new Option(viewLabels[v]+" · "+r,v+"/"+r).outerHTML):[new Option(viewLabels[v],v).outerHTML]).join("");
+    byId("view").replaceChildren(...projectionPages(settings).map(p => new Option(p.label, p.id)));
   }
-  byId("category").replaceChildren(...categoryNames.map(c=>new Option(c,c)));
+  byId("category").replaceChildren(...[...categoryNames, afternoonMode].map(c=>new Option(c,c)));
   byId("category").onchange=e=>{settings.category=e.target.value;paint();save();};
   byId("seconds").onchange=e=>{if(e.target.validity.valid && Number.isInteger(e.target.valueAsNumber))settings.seconds=e.target.valueAsNumber;paint();save();};
   byId("auto").onchange=e=>{settings.auto=e.target.checked;delete settings.fixed;save();};

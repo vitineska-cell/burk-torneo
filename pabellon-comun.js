@@ -2,8 +2,30 @@
 const screenKey = EVENT_ID + "-pantalla-v1";
 const viewLabels = {clas:"Clasificación", horario:"Próximos partidos", resultados:"Últimos resultados", cuadro:"Cuadro eliminatorio"};
 const screenDefaults = {category:"Mixto", order:Object.keys(viewLabels), seconds:10, auto:true, paused:false};
+const afternoonMode = "Masculino + Femenino";
+const afternoonCategories = ["Masculino", "Femenino"];
+function projectionPages(settings) {
+  const combined = settings.category === afternoonMode;
+  const categories = combined ? afternoonCategories : [settings.category];
+  return settings.order.flatMap(view => {
+    if (combined && view === "horario") {
+      return [{id:view, label:viewLabels[view], category:afternoonMode, view}];
+    }
+    return categories.flatMap(category => {
+      const rounds = view === "cuadro"
+        ? [...new Set(fixturesFor(category).filter(m => !isGroup(m)).map(m => m.stage.split(" ")[0]))]
+        : [""];
+      return rounds.map(round => {
+        const key = round ? view + "/" + round : view;
+        const title = viewLabels[view] + (round ? " · " + round : "");
+        return {id:combined ? category + "/" + key : key,
+          label:combined ? category + " · " + title : title, category, view, round};
+      });
+    });
+  });
+}
 function validSetup(s) {
-  return s && categoryNames.includes(s.category) && Array.isArray(s.order) && s.order.length &&
+  return s && (categoryNames.includes(s.category) || s.category === afternoonMode) && Array.isArray(s.order) && s.order.length &&
     new Set(s.order).size === s.order.length && s.order.every(k=>Object.hasOwn(viewLabels,k)) &&
     Number.isInteger(s.seconds) && s.seconds>=3 && s.seconds<=300 &&
     typeof s.auto==="boolean" && typeof s.paused==="boolean";
