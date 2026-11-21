@@ -9,7 +9,7 @@ const api = vm.runInThisContext("(function(){" + scripts.join("\n") +
   "\nreturn {FIXTURES,GROUP_SLOTS,checkEvent,checkRoster,importPairs,drawDivision,competition,confirmGroup,withScore,rankBlocks,isGroup,matchRules};})()");
 const {FIXTURES, GROUP_SLOTS, checkEvent, checkRoster, importPairs, drawDivision, competition, confirmGroup, withScore, rankBlocks, isGroup, matchRules} = api;
 const data = checkEvent(JSON.parse(fs.readFileSync(path.join(root, "datos-almanzor-2026.json"))));
-const expected = {Mixto:[13,22,34], Masculino:[13,22,34], Femenino:[5,10,13]};
+const expected = {Mixto:[13,22,34], Masculino:[13,22,35], Femenino:[5,10,14]};
 for (const name of Object.keys(expected)) data.categories[name] = {pairs:[],groups:null,confirmed:{},results:{}};
 const seed = structuredClone(data);
 const roster = {eventId:data.eventId, categories:{}};
@@ -22,8 +22,8 @@ assert.throws(() => checkRoster(Array(13).fill(roster.categories.Mixto[0]), "Mix
 assert.throws(() => importPairs(data, {...roster, categories:{...roster.categories, Femenino:[]}}));
 assert.deepEqual(data, seed, "La importación fallida debe ser atómica");
 importPairs(data, roster);
-assert.equal(FIXTURES.length, 81);
-assert.equal(new Set(FIXTURES.map(m => m.id)).size, 81);
+assert.equal(FIXTURES.length, 83);
+assert.equal(new Set(FIXTURES.map(m => m.id)).size, 83);
 const minutes = value => value.split(":").reduce((h,m) => Number(h)*60+Number(m), 0);
 for (const [i, game] of FIXTURES.entries()) {
   assert.ok(game.court >= 1 && game.court <= 7);
@@ -67,7 +67,9 @@ for (let trial=0; trial<12; trial++) {
         history.push(game);
       }
       const firstWins = random() < 0.5;
-      const target = isGroup(game) || /^(Previa|Cuartos)/.test(game.stage) ? 21 : 15;
+      const early = /^(Previa|Cuartos)/.test(game.stage);
+      const target = isGroup(game) ? 21 : category === "Mixto" ? (early ? 21 : 15) : (early ? 15 : 21);
+      assert.equal(matchRules(game).bestOf, isGroup(game) || (early && category === "Mixto") ? 1 : 3);
       assert.equal(matchRules(game).targets[0], target);
       const point = firstWins ? {s1:target,s2:target-1} : {s1:target-1,s2:target};
       const sets = matchRules(game).bestOf === 1 ? [point] :
@@ -84,18 +86,28 @@ for (let trial=0; trial<12; trial++) {
     const final = games.find(m => m.stage === "Final");
     const semi = games.find(m => m.stage === "Semifinal 1");
     const oldSemi = view.matches.get(semi.id);
-    const opposite = oldSemi.winner === oldSemi.a ? {s1:"14",s2:"15"} : {s1:"15",s2:"14"};
+    const semiTarget = category === "Mixto" ? 15 : 21;
+    const opposite = oldSemi.winner === oldSemi.a ? {s1:semiTarget-1,s2:semiTarget} : {s1:semiTarget,s2:semiTarget-1};
     const changed = withScore(division,category,semi.id,[opposite,opposite,{s1:"",s2:""}]);
     assert.ok(changed.removed.includes(final.id));
-    assert.equal(changed.removed.length, 1);
+    const bronze = games.find(m => m.stage === "Bronce");
+    if (category === "Mixto") {
+      assert.equal(bronze, undefined);
+      assert.deepEqual(changed.removed, [final.id]);
+    } else {
+      const game = view.matches.get(bronze.id);
+      assert.equal(game.a, oldSemi.loser);
+      assert.equal(game.b, view.matches.get(games.find(m => m.stage === "Semifinal 2").id).loser);
+      assert.deepEqual(new Set(changed.removed), new Set([final.id, bronze.id]));
+    }
     assert.throws(() => withScore(division,category,semi.id,[opposite,opposite,opposite]));
     assert.ok([...appearances.values()].every(games => games.length >= 4 && games.length <= 8));
     if (category === "Femenino") {
-      assert.deepEqual([...appearances.values()].map(a => a.length).sort(),[4,5,5,6,6]);
+      assert.deepEqual([...appearances.values()].map(a => a.length).sort(),[4,6,6,6,6]);
     }
   }
 }
 const a = {id:"a",w:2,diff:3,pf:86}, b={id:"b",w:2,diff:3,pf:90}, c={id:"c",w:2,diff:0,pf:92};
 assert.deepEqual(rankBlocks([b,c,a]),[[b],[a],[c]]);
 assert.deepEqual(rankBlocks([b,c,a].map(row => ({...row,diff:0,pf:90}))).map(g=>g.length),[3]);
-console.log("OK · 81 partidos, tres modalidades, 12 torneos completos, descansos, desempates y correcciones");
+console.log("OK · 83 partidos, tres modalidades, 12 torneos completos, descansos, desempates y correcciones");

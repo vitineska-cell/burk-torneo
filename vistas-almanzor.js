@@ -24,6 +24,10 @@ function groupTables(view, editable) {
 function scoreCard(game, editable) {
   const {match, a, b, status, winner} = game;
   const rules = matchRules(match);
+  const tiedAt = rules.targets[0] - 1;
+  const tieText = rules.winOnServeAtTie
+    ? 'con ' + tiedAt + '–' + tiedAt + ', el punto ganador se consigue al saque'
+    : 'punto de oro en ' + tiedAt + '–' + tiedAt;
   const fields = (pair, source, key) => {
     const cells = status.sets.map((set, i) => {
       if (!editable) return '<span class="bk-score">' + (escHtml(set[key]) || '–') + '</span>';
@@ -37,7 +41,7 @@ function scoreCard(game, editable) {
   return '<div class="panel" data-match="' + match.id + '"><div class="panel-head">' +
     match.start + '–' + match.end + ' · Pista ' + match.court + '<span class="rest">' + match.id + ' · ' + match.stage +
     '</span></div><div class="bk-rule">' + (rules.bestOf === 1 ? '1 set a 21' : 'Mejor de 3 sets a ' + rules.targets[0]) +
-    ' · punto de oro en ' + (rules.targets[0]-1) + '–' + (rules.targets[0]-1) + '</div>' + fields(a, match.a, "s1") + fields(b, match.b, "s2") +
+    ' · ' + tieText + '</div>' + fields(a, match.a, "s1") + fields(b, match.b, "s2") +
     (editable && a && b ? '<div class="gen-box"><button class="btn" data-save="' + match.id +
       '">Guardar marcador</button></div>' : '') + '</div>';
 }

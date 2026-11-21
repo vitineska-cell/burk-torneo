@@ -158,10 +158,14 @@ async function run() {
     query(win,"[data-confirm]").click();
     tab(win,"cuadros");
     save("FS1",[[15,12],[12,15],[15,14]]);
-    save("FS2",[[15,0],[15,0]]);
-    save("FFIN",[[14,15],[13,15]]);
+    assert.equal(win.state.categories.Femenino.results.FS1, undefined);
+    assert.match(query(win,'[data-match="FS1"] .bk-rule').textContent,/20–20.*al saque/);
+    save("FS1",[[21,12],[12,21],[21,20]]);
+    save("FS2",[[21,0],[21,0]]);
+    save("FFIN",[[20,21],[13,21]]);
     assert.match(win.buildSummary(),/FFIN Final/);
-    assert.ok(!query(win,"#v-cuadros").textContent.includes("3.er puesto"));
+    save("FBR",[[21,20],[21,0]]);
+    assert.match(win.buildSummary(),/FBR Bronce/);
     select(win,"Masculino");tab(win,"inscripcion");query(win,"#btn-draw").click();
     select(win,"Mixto");tab(win,"inscripcion");query(win,"#btn-draw").click();
     assert.deepEqual(Object.keys(win.state.categories.Mixto.groups).map(s => s[1]).sort(),
@@ -212,12 +216,12 @@ async function run() {
     select(publicWindow,"Femenino");
     tab(publicWindow,"cuadros");
     assert.match(query(publicWindow,"#champ-banner").textContent,/Campeones · Femenino/);
-    assert.equal(publicWindow.document.querySelectorAll("#v-cuadros [data-match]").length,3);
-    assert.equal(publicWindow.document.querySelectorAll("#v-horario [data-match]").length,13);
+    assert.equal(publicWindow.document.querySelectorAll("#v-cuadros [data-match]").length,4);
+    assert.equal(publicWindow.document.querySelectorAll("#v-horario [data-match]").length,14);
     assert.ok(query(publicWindow,"#v-clas").textContent.includes(firstName.value));
     select(publicWindow,"Masculino");
     assert.equal(query(publicWindow,"#champ-banner").textContent,"");
-    assert.equal(publicWindow.document.querySelectorAll("#v-horario [data-match]").length,34);
+    assert.equal(publicWindow.document.querySelectorAll("#v-horario [data-match]").length,35);
     select(publicWindow,"Mixto");
     assert.equal(publicWindow.document.querySelectorAll("#v-horario [data-match]").length,34);
     assert.deepEqual(publicErrors,[]);

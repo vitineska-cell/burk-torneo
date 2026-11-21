@@ -3,9 +3,14 @@
 const categoryNames = Object.keys(GROUP_SLOTS);
 const fixturesFor = category => FIXTURES.filter(match => match.category === category);
 const isGroup = match => match.stage.startsWith("Grupo ");
-const matchRules = match => /^(Semifinal|Final$)/.test(match.stage)
-  ? {bestOf: 3, goldenPoint: true, targets: [15, 15, 15]}
-  : {bestOf: 1, targets: [21]};
+function matchRules(match) {
+  const titleRound = /^(Semifinal|Final$)/.test(match.stage);
+  if ((match.category === "Masculino" || match.category === "Femenino") && !isGroup(match)) {
+    const target = titleRound || match.stage === "Bronce" ? 21 : 15;
+    return {bestOf: 3, targets: [target, target, target], goldenPoint: true, winOnServeAtTie: true};
+  }
+  return titleRound ? {bestOf: 3, goldenPoint: true, targets: [15, 15, 15]} : {bestOf: 1, targets: [21]};
+}
 const groupOf = match => match.stage.split(" · ")[0].slice(6);
 const targetSize = category => Object.values(GROUP_SLOTS[category]).flat().length;
 

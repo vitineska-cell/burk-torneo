@@ -135,5 +135,7 @@ const FIXTURES = [
   {"id": "MS1", "start": "18:40", "end": "19:25", "court": 1, "category": "Masculino", "stage": "Semifinal 1", "a": "Gan. MQ1", "b": "Gan. MQ2"},
   {"id": "MS2", "start": "18:40", "end": "19:25", "court": 2, "category": "Masculino", "stage": "Semifinal 2", "a": "Gan. MQ3", "b": "Gan. MQ4"},
   {"id": "FFIN", "start": "18:40", "end": "19:25", "court": 6, "category": "Femenino", "stage": "Final", "a": "Gan. FS1", "b": "Gan. FS2"},
-  {"id": "MFIN", "start": "19:40", "end": "20:25", "court": 1, "category": "Masculino", "stage": "Final", "a": "Gan. MS1", "b": "Gan. MS2"}
+  {"id": "FBR", "start": "18:40", "end": "19:25", "court": 7, "category": "Femenino", "stage": "Bronce", "a": "Perd. FS1", "b": "Perd. FS2"},
+  {"id": "MFIN", "start": "19:40", "end": "20:25", "court": 1, "category": "Masculino", "stage": "Final", "a": "Gan. MS1", "b": "Gan. MS2"},
+  {"id": "MBR", "start": "19:40", "end": "20:25", "court": 2, "category": "Masculino", "stage": "Bronce", "a": "Perd. MS1", "b": "Perd. MS2"}
 ];
