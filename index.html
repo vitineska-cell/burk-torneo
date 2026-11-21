@@ -125,6 +125,19 @@ main{padding-top:16px}
   #v-horario .bk-win .bk-name { color: var(--gold); }
   #v-horario .bk-score { width: 25px; flex-basis: 25px; }
 }
+.agenda-link{font:inherit;color:inherit;text-align:inherit;background:transparent;border:0;cursor:pointer;text-decoration:underline;text-decoration-color:var(--gold);text-underline-offset:3px;overflow-wrap:anywhere;max-width:100%}
+#agenda{position:fixed;inset:0;margin:auto;width:min(28rem,calc(100% - 24px));max-height:min(32rem,80vh);background:var(--panel);color:var(--txt);border:1px solid var(--gold);padding:0;overflow:auto;overscroll-behavior:contain}
+#agenda::backdrop{background:rgba(0,0,0,.65)}
+#agenda.embedded{bottom:auto;max-height:min(22rem,80vh)}
+.agenda-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:6px 14px;position:sticky;top:0;background:var(--panel);border-bottom:1px solid var(--line)}
+.agenda-head button{font:inherit;color:var(--gold);background:transparent;border:0;min-height:44px;padding:0 6px;cursor:pointer}
+#agenda h2,#agenda-list{padding:12px 16px;overflow-wrap:anywhere}
+#agenda h2{font-size:18px}
+#agenda-list{padding-top:0;line-height:1.4}
+#agenda-list li{list-style:none;border-top:1px solid var(--line);padding:10px 0}
+#agenda-list strong,#agenda-list small{display:block}
+#agenda-list strong{font-size:20px;color:var(--gold)}
+#agenda-list li:first-child strong{font-size:24px}
 </style>
 </head>
 <body data-almanzor>
@@ -166,13 +179,78 @@ main{padding-top:16px}
   <footer class="ftr">Resultados en directo · <b>BÜRK</b></footer>
 </div>
 
+<dialog id="agenda" aria-labelledby="agenda-title">
+  <div class="agenda-head"><b>Próximos partidos</b><button type="button" id="agenda-close" autofocus>Cerrar</button></div>
+  <h2 id="agenda-title"></h2><div id="agenda-list"></div>
+</dialog>
 <script src="torneo.js?rally=1"></script>
 <script src="calendario-almanzor.js?rally=2"></script>
 <script src="almanzor.js?rally=2"></script>
-<script src="vistas-almanzor.js?rally=2"></script>
+<script src="vistas-almanzor.js?agenda=1"></script>
 <script>
 var DATA = null, category = "Mixto";
 var $ = id => document.getElementById(id);
+const agenda = $("agenda");
+let selectedPair = null;
+let openerSelector = "";
+function pairButton(pair, label) {
+  return '<button type="button" class="agenda-link" aria-haspopup="dialog" data-agenda="' + escHtml(pair.id) + '">' + escHtml(label) + '</button>';
+}
+function refreshAgenda(view) {
+  if (!selectedPair) return;
+  const division = DATA.categories[category];
+  const pair = division.pairs.find(p => p.id === selectedPair);
+  if (!pair) { agenda.close(); return; }
+  $("agenda-title").textContent = pairName(pair) + " · " + category;
+  const pending = [...view.matches.values()].filter(g => !g.winner &&
+    (g.a?.id === pair.id || g.b?.id === pair.id)).sort((a,b) => a.match.start.localeCompare(b.match.start));
+  const items = pending.map(g => {
+    const opponent = g.a?.id === pair.id ? g.b : g.a;
+    return '<li><strong>' + escHtml(g.match.start) + ' · Pista ' + escHtml(g.match.court) +
+      '</strong><small>' + escHtml(g.match.stage) + '</small>' +
+      (opponent ? 'Contra ' + escHtml(pairName(opponent)) : 'Rival por confirmar') + '</li>';
+  });
+  const empty = division.groups ? 'Sin partidos pendientes asignados.' : 'Pendiente del sorteo de grupos.';
+  const html = items.length ? '<ul>' + items.join('') + '</ul>' : empty;
+  if ($("agenda-list").innerHTML !== html) $("agenda-list").innerHTML = html;
+}
+document.addEventListener("click", event => {
+  const button = event.target.closest("[data-agenda]");
+  if (!button) return;
+  selectedPair = button.dataset.agenda;
+  const match = button.closest("[data-match]");
+  const section = button.closest("section");
+  openerSelector = "#" + section.id + (match ? ' [data-match="' + match.dataset.match + '"]' : '') +
+    ' [data-agenda="' + selectedPair + '"]';
+  refreshAgenda(competition(DATA.categories[category], category));
+  // WordPress da al iframe la altura de todo el horario. Abrir junto al nombre
+  // pulsado evita centrar la ficha fuera de la parte visible del móvil.
+  if (window !== window.parent) {
+    agenda.classList.add("embedded");
+    agenda.style.maxHeight = "";
+    const top = button.getBoundingClientRect().top - 60;
+    agenda.style.top = Math.max(0, Math.min(top, innerHeight - Math.min(360, innerHeight * .8))) + "px";
+  }
+  agenda.showModal();
+  agenda.scrollTop = 0;
+  if (window !== window.parent && window.IntersectionObserver) {
+    // El rectángulo visible tiene en cuenta el scroll de la página que aloja el iframe.
+    const anchorId = selectedPair;
+    const observer = new IntersectionObserver(([entry]) => {
+      observer.disconnect();
+      const visible = entry.intersectionRect;
+      if (!agenda.open || selectedPair !== anchorId || visible.height < 100) return;
+      agenda.style.maxHeight = Math.min(352, visible.height - 16) + "px";
+      agenda.style.top = (visible.top + (visible.height - agenda.offsetHeight) / 2) + "px";
+    });
+    observer.observe(document.documentElement);
+  }
+});
+$("agenda-close").onclick = () => agenda.close();
+agenda.addEventListener("close", () => {
+  selectedPair = null;
+  document.querySelector(openerSelector)?.focus({preventScroll:true});
+});
 function renderInscription(el,titulo,division){
   var h='<div class="panel"><div class="panel-head">'+titulo+'<span class="rest">'+division.pairs.length+' parejas inscritas</span></div>';
   if(!division.pairs.length){
@@ -180,7 +258,7 @@ function renderInscription(el,titulo,division){
   }else{
     h+='<div class="insc-grid">';
     division.pairs.forEach(function(p,i){
-      h+='<div class="insc-item"><span class="n">'+(i+1)+'</span>'+escHtml(pairName(p))+'</div>';
+      h+='<div class="insc-item"><span class="n">'+(i+1)+'</span>'+pairButton(p,pairName(p))+'</div>';
     });
     h+='</div><div class="hint">Los grupos se sortearán al cierre de la inscripción.</div></div>';
   }
@@ -217,14 +295,15 @@ function renderAll() {
     (division.groups ? finished + " / " + view.matches.size + " partidos" : division.pairs.length + " parejas inscritas");
   $("upd").textContent = DATA.meta.updatedAt ? "Actualizado a las " +
     new Date(DATA.meta.updatedAt).toLocaleTimeString("es-ES", {timeZone:"Europe/Madrid", hour:"2-digit", minute:"2-digit"}) : "Inscripción abierta";
-  if (division.groups) $("v-clas").innerHTML = groupTables(view, false);
+  if (division.groups) $("v-clas").innerHTML = groupTables(view, false, pairButton);
   else renderInscription($("v-clas"), "Inscripción en curso", division);
-  $("v-horario").innerHTML = scheduleHTML(view, category, () => true, false);
-  $("v-cuadros").innerHTML = scheduleHTML(view, category, match => !isGroup(match), false);
+  $("v-horario").innerHTML = scheduleHTML(view, category, () => true, false, pairButton);
+  $("v-cuadros").innerHTML = scheduleHTML(view, category, match => !isGroup(match), false, pairButton);
   const final = [...view.matches.values()].find(game => game.match.stage === "Final");
   $("champ-banner").innerHTML = final.winner ? '<div class="champ-banner"><div class="champ-k">Campeones · ' +
     category + '</div><div class="champ-n">' + escHtml(pairName(final.winner)) + '</div></div>' : "";
   renderSorteos();
+  refreshAgenda(view);
 }
 
 $("categories").addEventListener("click", event => {
@@ -235,6 +314,7 @@ function load(){
   fetch(DATA_FILE+"?ts="+Date.now(),{cache:"no-store"})
     .then(function(r){if(!r.ok)throw new Error(r.status);return r.json();})
     .then(function(d){
+      if (DATA && d.meta?.updatedAt < DATA.meta.updatedAt) return;
       DATA=checkEvent(d);$("err").style.display="none";renderAll();
     })
     .catch(function(){$("err").style.display="block";});

@@ -4,11 +4,11 @@ function categoryNav(selected) {
     '" data-category="' + name + '" aria-pressed="' + (selected === name) + '">' + name + '</button>').join("");
 }
 
-function groupTables(view, editable) {
+function groupTables(view, editable, renderPair = (pair, label) => escHtml(label)) {
   return Object.entries(view.tables).map(([group, table]) => {
     const title = 'Grupo ' + group;
     const rows = table.rows.map((row, index) => '<tr><td>' + (index + 1) + '</td><td>' +
-      escHtml(row.slot + ' · ' + pairName(row.pair)) + '</td><td>' + row.pj + '</td><td>' + row.w +
+      renderPair(row.pair, row.slot + ' · ' + pairName(row.pair)) + '</td><td>' + row.pj + '</td><td>' + row.w +
       '</td><td>' + row.pf + '</td><td>' + row.pc + '</td><td>' + fmtDiff(row.diff) + '</td></tr>').join('');
     const tie = table.blocks.some(block => block.length > 1);
     const action = editable && table.complete && !table.confirmed
@@ -21,7 +21,7 @@ function groupTables(view, editable) {
   }).join('');
 }
 
-function scoreCard(game, editable) {
+function scoreCard(game, editable, renderPair = (pair, label) => escHtml(label)) {
   const {match, a, b, status, winner} = game;
   const rules = matchRules(match);
   const tiedAt = rules.targets[0] - 1;
@@ -36,7 +36,7 @@ function scoreCard(game, editable) {
         '" data-field="' + key + '" data-set="' + i + '" value="' + escHtml(set[key]) + '"' + (a && b ? '' : ' disabled') + '>';
     }).join('');
     return '<div class="bk-row' + (winner && pair === winner ? ' bk-win' : '') + '"><span class="bk-name">' +
-      escHtml(pair ? pairName(pair) : source) + '</span><span class="bk-score-cells">' + cells + '</span></div>';
+      (pair ? renderPair(pair, pairName(pair)) : escHtml(source)) + '</span><span class="bk-score-cells">' + cells + '</span></div>';
   };
   return '<div class="panel" data-match="' + match.id + '"><div class="panel-head">' +
     match.start + '–' + match.end + ' · Pista ' + match.court + '<span class="rest">' + match.id + ' · ' + match.stage +
@@ -46,8 +46,8 @@ function scoreCard(game, editable) {
       '">Guardar marcador</button></div>' : '') + '</div>';
 }
 
-function scheduleHTML(view, category, filter, editable) {
-  return fixturesFor(category).filter(filter).map(match => scoreCard(view.matches.get(match.id), editable)).join("");
+function scheduleHTML(view, category, filter, editable, renderPair) {
+  return fixturesFor(category).filter(filter).map(match => scoreCard(view.matches.get(match.id), editable, renderPair)).join("");
 }
 
 function pendingDraw() {
