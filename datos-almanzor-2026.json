@@ -5,7 +5,7 @@
     "venue": "Pickleball Almanzor",
     "date": "2026-11-21",
     "courts": 7,
-    "updatedAt": "2026-11-21T15:49:57.179Z"
+    "updatedAt": "2026-11-21T15:59:47.269Z"
   },
   "categories": {
     "Mixto": {
@@ -1045,6 +1045,32 @@
     }
   },
   "raffle": {
-    "winners": []
+    "winners": [
+      {
+        "name": "Kitty Lo",
+        "prize": "CAMISETA ALMANZOR",
+        "at": "2026-11-21T15:52:35.420Z"
+      },
+      {
+        "name": "Carlota Cartagena",
+        "prize": "CAMISETA ALMANZOR 2",
+        "at": "2026-11-21T15:52:58.861Z"
+      },
+      {
+        "name": "Pablo Segade Calvo",
+        "prize": "SESION DE FOTOS EN ESTUDIO",
+        "at": "2026-11-21T15:53:32.665Z"
+      },
+      {
+        "name": "Blanca de Dorremochea Zaldívar",
+        "prize": "SESION DE FISIOTERAPIA",
+        "at": "2026-11-21T15:53:57.862Z"
+      },
+      {
+        "name": "Marta Hernando Álvarez",
+        "prize": "PALA LEGEND  S01",
+        "at": "2026-11-21T15:54:33.263Z"
+      }
+    ]
   }
 }
