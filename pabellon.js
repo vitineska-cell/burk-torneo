@@ -68,9 +68,13 @@ function render(){
     if(view==="cuadro")games=games.filter(g=>g.match.stage.split(" ")[0]===round);
     const heads=["Hora","Pista","Parejas",view==="horario"?"Fase":"Marcador"];
     for(const g of games){
-      const names=[g.a?pairName(g.a):g.match.a,g.b?pairName(g.b):g.match.b];
+      const names=[g.a,g.b].map((pair,index)=>{
+        const name=escHtml(pair ? pairName(pair) : [g.match.a,g.match.b][index]);
+        if(view==="resultados" && pair===g.winner) return '<span><strong class="result-winner">'+name+'</strong></span>';
+        return "<span>"+name+"</span>";
+      }).join("");
       const score=g.status.sets.filter(s=>s.s1!=="" && s.s2!=="").map(s=>s.s1+"–"+s.s2).join(" / ");
-      rows.push([g.match.start,g.match.court,names.map(n=>"<span>"+escHtml(n)+"</span>").join(""),view==="horario"?escHtml(g.match.stage):score||"Pendiente"]);
+      rows.push([g.match.start,g.match.court,names,view==="horario"?escHtml(g.match.stage):score||"Pendiente"]);
     }
     const empty=view==="resultados"?"Todavía no hay resultados publicados." : "No hay partidos pendientes programados en los próximos 60 minutos.";
     html=rows.length?"<table><thead><tr>"+heads.map(h=>"<th>"+h+"</th>").join("")+"</tr></thead><tbody>"+rows.map(row=>"<tr>"+row.map((v,i)=>{
