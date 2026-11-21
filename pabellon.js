@@ -33,32 +33,39 @@ function render(){
   el("mode").textContent=setup.category;
   if(!data)return;
   const div=data.categories[setup.category], comp=competition(div,setup.category);
-  let heads, rows=[], empty;
+  let html;
   if(view==="clas"){
-    heads=["Grupo","Puesto","Pareja","PJ","PG","PF","PC","DIF"];
-    for(const [group,table] of Object.entries(comp.tables)){
-      table.rows.forEach((r,i)=>rows.push([escHtml(group),i+1,escHtml(pairName(r.pair)),r.pj,r.w,r.pf,r.pc,r.diff]));
-    }
-    empty="Pendiente del sorteo de grupos.";
+    const columns=["Puesto","Pareja","PJ","PG","PF","PC","DIF"];
+    html=Object.entries(comp.tables).filter(([,table])=>table.rows.length).map(([group,table])=>{
+      const label="Grupo "+escHtml(group);
+      const rows=table.rows.map((r,i)=>{
+        const values=[i+1,escHtml(pairName(r.pair)),r.pj,r.w,r.pf,r.pc,r.diff];
+        return "<tr>"+values.map(value=>"<td>"+value+"</td>").join("")+"</tr>";
+      });
+      return '<table class="group-table" aria-label="'+label+'"><colgroup><col class="place"><col><col class="stat" span="5"></colgroup><thead><tr><th colspan="7">'+label+
+        "</th></tr><tr>"+columns.map(c=>'<th scope="col">'+c+"</th>").join("")+
+        "</tr></thead><tbody>"+rows.join("")+"</tbody></table>";
+    }).join("") || "<p>Pendiente del sorteo de grupos.</p>";
   }else{
+    const rows=[];
     let games=fixturesFor(setup.category).map(m=>comp.matches.get(m.id));
     if(view==="horario")games=games.filter(g=>!g.winner);
     if(view==="resultados"){
       games=Object.keys(div.results).reverse().map(id=>comp.matches.get(id)).filter(g=>g?.winner);
     }
     if(view==="cuadro")games=games.filter(g=>g.match.stage.split(" ")[0]===round);
-    heads=["Hora","Pista","Parejas",view==="horario"?"Fase":"Marcador"];
+    const heads=["Hora","Pista","Parejas",view==="horario"?"Fase":"Marcador"];
     for(const g of games){
       const names=[g.a?pairName(g.a):g.match.a,g.b?pairName(g.b):g.match.b];
       const score=g.status.sets.filter(s=>s.s1!=="" && s.s2!=="").map(s=>s.s1+"–"+s.s2).join(" / ");
       rows.push([g.match.start,g.match.court,names.map(n=>"<span>"+escHtml(n)+"</span>").join(""),view==="horario"?escHtml(g.match.stage):score||"Pendiente"]);
     }
-    empty=view==="resultados"?"Todavía no hay resultados publicados.":"Todos los partidos han terminado.";
-  }
-  const html=rows.length?"<table><thead><tr>"+heads.map(h=>"<th>"+h+"</th>").join("")+"</tr></thead><tbody>"+rows.map(row=>"<tr>"+row.map((v,i)=>{
-    const cls=view==="clas"?"":(["time","num","pairs",""][i]);
+    const empty=view==="resultados"?"Todavía no hay resultados publicados.":"Todos los partidos han terminado.";
+    html=rows.length?"<table><thead><tr>"+heads.map(h=>"<th>"+h+"</th>").join("")+"</tr></thead><tbody>"+rows.map(row=>"<tr>"+row.map((v,i)=>{
+    const cls=["time","num","pairs",""][i];
     return '<td class="'+cls+'">'+v+"</td>";
   }).join("")+"</tr>").join("")+"</tbody></table>":"<p>"+empty+"</p>";
+  }
   if(html!==previousHTML){frame.innerHTML=html;previousHTML=html;frame.scrollTop=position;}
 }
 function tick(now){

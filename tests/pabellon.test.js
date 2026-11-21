@@ -29,7 +29,15 @@ w.eval(fixtures.map(read).join("\n"));
   let h=300,now=0;
   Object.defineProperties(frame,{clientHeight:{get:()=>300},scrollHeight:{get:()=>h}});
   const advance=ms=>{for(let i=0;i<ms;i+=50){now+=50;callback(now);}};
-  cmd({});assert.equal(heading(),"Clasificación");advance(10050);assert.equal(heading(),"Próximos partidos");
+  cmd({});assert.equal(heading(),"Clasificación");
+  for(const [category,sizes] of [["Mixto",[5,4,4]],["Masculino",[5,4,4]],["Femenino",[5]]]){
+    settings.category=category;cmd({});
+    const tables=Array.from(frame.querySelectorAll("table"));
+    assert.deepEqual(tables.map(t=>t.tBodies[0].rows.length),sizes);
+    assert.deepEqual(tables.map(t=>t.tHead.rows[0].textContent),sizes.length===1?["Grupo único"]:["Grupo A","Grupo B","Grupo C"]);
+    for(const table of tables)assert.equal(table.tBodies[0].rows[0].cells[0].textContent,"1");
+  }
+  settings.category="Mixto";cmd({});advance(10050);assert.equal(heading(),"Próximos partidos");
   h=1000;advance(2900);assert.equal(frame.scrollTop,0);
   advance(8000);assert.ok(frame.scrollTop>0 && frame.scrollTop<700);
   settings.paused=true;cmd({});const stopped=frame.scrollTop;
