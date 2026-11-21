@@ -5,7 +5,7 @@
     "venue": "Pickleball Almanzor",
     "date": "2026-11-21",
     "courts": 7,
-    "updatedAt": "2026-11-20T23:07:42.735Z"
+    "updatedAt": "2026-11-21T06:21:03.533Z"
   },
   "categories": {
     "Mixto": {
@@ -76,21 +76,7 @@
           "p2": "Francisco Javier de Marcos del Pozo"
         }
       ],
-      "groups": {
-        "XA1": "MX01",
-        "XA2": "MX09",
-        "XA3": "MX11",
-        "XA4": "MX06",
-        "XB1": "MX07",
-        "XB2": "MX12",
-        "XB3": "MX03",
-        "XC1": "MX10",
-        "XC2": "MX05",
-        "XC3": "MX04",
-        "XD1": "MX08",
-        "XD2": "MX02",
-        "XD3": "MX13"
-      },
+      "groups": null,
       "results": {},
       "confirmed": {}
     },
@@ -162,21 +148,7 @@
           "p2": "Alex Percey"
         }
       ],
-      "groups": {
-        "MA1": "M07",
-        "MA2": "M06",
-        "MA3": "M11",
-        "MA4": "M05",
-        "MB1": "M03",
-        "MB2": "M01",
-        "MB3": "M08",
-        "MC1": "M10",
-        "MC2": "M13",
-        "MC3": "M02",
-        "MD1": "M09",
-        "MD2": "M12",
-        "MD3": "M04"
-      },
+      "groups": null,
       "results": {},
       "confirmed": {}
     },
@@ -208,13 +180,7 @@
           "p2": "Blanca de Dorremochea Zaldívar"
         }
       ],
-      "groups": {
-        "F1": "F01",
-        "F2": "F05",
-        "F3": "F03",
-        "F4": "F04",
-        "F5": "F02"
-      },
+      "groups": null,
       "results": {},
       "confirmed": {}
     }

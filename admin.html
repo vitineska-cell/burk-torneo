@@ -177,14 +177,14 @@ main{padding-top:16px}
 </div>
 <div class="toast" id="toast"></div>
 
-<script src="torneo.js"></script>
-<script src="calendario-almanzor.js"></script>
-<script src="almanzor.js"></script>
+<script src="torneo.js?rally=1"></script>
+<script src="calendario-almanzor.js?rally=1"></script>
+<script src="almanzor.js?rally=1"></script>
 <script src="vendor/fflate-0.8.2.js"></script>
 <script src="inscripciones-almanzor.js"></script>
-<script src="vistas-almanzor.js"></script>
+<script src="vistas-almanzor.js?rally=1"></script>
 <script>
-var LS_STATE = "burk-admin-" + EVENT_ID;
+var LS_STATE = "burk-admin-rally-" + EVENT_ID;
 var LS_CFG = "burk-admin-cfg-v1";
 var state = null, baseline = null, dirty = false;
 var activeTab = "inscripcion", category = "Mixto", raffleBusy = false, lastPublished = null;
@@ -370,7 +370,7 @@ document.querySelector("main").addEventListener("click", event => {
       const fields = button.closest("[data-match]").querySelectorAll("[data-set]");
       const sets = [];
       for (const field of fields) {
-        if (!field.validity.valid) throw Error("Introduce puntos enteros de 0 a 21.");
+        if (!field.validity.valid) throw Error("Introduce puntos enteros de 0 a " + field.max + ".");
         const i = Number(field.dataset.set);
         if (!sets[i]) sets[i] = emptyScoreSet();
         sets[i][field.dataset.field] = field.value.trim();
