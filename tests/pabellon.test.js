@@ -18,6 +18,7 @@ for(const [category,div] of Object.entries(sample.categories)){
   div.groups=Object.fromEntries(slots.map(s=>[s,s]));div.results={};div.confirmed={};
 }
 w.fetch=async()=>({ok:true,json:async()=>sample});
+w.Date.now=()=>Date.parse("2026-11-21T08:55:00Z");
 const fixtures=["torneo.js","calendario-almanzor.js","almanzor.js","pabellon-comun.js","pabellon.js"];
 w.eval(fixtures.map(read).join("\n"));
 (async()=>{
@@ -38,6 +39,12 @@ w.eval(fixtures.map(read).join("\n"));
     for(const table of tables)assert.equal(table.tBodies[0].rows[0].cells[0].textContent,"1");
   }
   settings.category="Mixto";cmd({});advance(10050);assert.equal(heading(),"Próximos partidos");
+  const times=()=>Array.from(frame.querySelectorAll("tbody tr"),row=>row.cells[0].textContent);
+  assert.deepEqual([...new Set(times())],["09:55","10:20","10:45","10:50"]);
+  w.Date.now=()=>Date.parse("2026-11-20T08:55:00Z");cmd({});
+  assert.equal(times().length,0);assert.match(frame.textContent,/60 minutos/);
+  w.Date.now=()=>Date.parse("2026-11-21T08:50:00Z");cmd({});
+  assert.ok(times().includes("10:50"));assert.ok(!times().includes("09:30"));
   h=1000;advance(2900);assert.equal(frame.scrollTop,0);
   advance(8000);assert.ok(frame.scrollTop>0 && frame.scrollTop<700);
   settings.paused=true;cmd({});const stopped=frame.scrollTop;
@@ -71,6 +78,9 @@ w.eval(fixtures.map(read).join("\n"));
   d.dispatchEvent(new d.CustomEvent("torneo-publicado",{detail:result}));
   change(control("view"),"resultados");control("pin").click();
   assert.match(frame.textContent,/21–10/);
+  w.Date.now=()=>Date.parse("2026-11-21T14:30:00Z");
+  change(control("view"),"horario");control("pin").click();
+  assert.equal(times().filter(t=>t==="15:30").length,4,"Excluir el encuentro ya resuelto");
   desk.window.close();
   dom.window.close();console.log("OK · proyección, pausa, recorrido completo, tiempos de lectura, fijación y rondas");
 })().catch(e=>{console.error(e);dom.window.close();process.exitCode=1;});

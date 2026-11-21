@@ -2,6 +2,18 @@
 const el=id=>document.getElementById(id);
 const frame=el("frame");
 let setup=readSetup(), page, data, previousHTML="", elapsed=0, position=0, bottomTime=0, lastFrame=null;
+const pavilionClock=new Intl.DateTimeFormat("sv-SE", {
+  timeZone:"Europe/Madrid",year:"numeric",month:"2-digit",day:"2-digit",
+  hour:"2-digit",minute:"2-digit",hourCycle:"h23"
+});
+function nextHour(games, date, now){
+  const start=pavilionClock.format(now);
+  const end=pavilionClock.format(now+3600000);
+  return games.filter(game=>{
+    const kickoff=date+" "+game.match.start;
+    return !game.winner && kickoff>=start && kickoff<=end;
+  });
+}
 function rounds(cat){
   return [...new Set(fixturesFor(cat).filter(m=>!isGroup(m)).map(m=>m.stage.split(" ")[0]))];
 }
@@ -49,7 +61,7 @@ function render(){
   }else{
     const rows=[];
     let games=fixturesFor(setup.category).map(m=>comp.matches.get(m.id));
-    if(view==="horario")games=games.filter(g=>!g.winner);
+    if(view==="horario")games=nextHour(games,data.meta.date,Date.now());
     if(view==="resultados"){
       games=Object.keys(div.results).reverse().map(id=>comp.matches.get(id)).filter(g=>g?.winner);
     }
@@ -60,7 +72,7 @@ function render(){
       const score=g.status.sets.filter(s=>s.s1!=="" && s.s2!=="").map(s=>s.s1+"–"+s.s2).join(" / ");
       rows.push([g.match.start,g.match.court,names.map(n=>"<span>"+escHtml(n)+"</span>").join(""),view==="horario"?escHtml(g.match.stage):score||"Pendiente"]);
     }
-    const empty=view==="resultados"?"Todavía no hay resultados publicados.":"Todos los partidos han terminado.";
+    const empty=view==="resultados"?"Todavía no hay resultados publicados." : "No hay partidos pendientes programados en los próximos 60 minutos.";
     html=rows.length?"<table><thead><tr>"+heads.map(h=>"<th>"+h+"</th>").join("")+"</tr></thead><tbody>"+rows.map(row=>"<tr>"+row.map((v,i)=>{
     const cls=["time","num","pairs",""][i];
     return '<td class="'+cls+'">'+v+"</td>";
@@ -94,7 +106,7 @@ function acceptData(next){
 }
 async function refresh(){
   try{const r=await fetch(DATA_FILE+"?t="+Date.now(),{cache:"no-store"});if(!r.ok)throw Error();acceptData(await r.json());}
-  catch{el("sync").textContent=data?"Sin conexión · mostrando la última actualización":"Esperando conexión…";}
+  catch{if(page==="horario" && data)render();el("sync").textContent=data?"Sin conexión · mostrando la última actualización":"Esperando conexión…";}
   finally{setTimeout(refresh,10000);}
 }
 el("pair").onclick=()=>el("pairing").showModal();
