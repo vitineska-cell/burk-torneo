@@ -4,7 +4,7 @@ const categoryNames = Object.keys(GROUP_SLOTS);
 const fixturesFor = category => FIXTURES.filter(match => match.category === category);
 const isGroup = match => match.stage.startsWith("Grupo ");
 const matchRules = match => /^(Semifinal|Final$)/.test(match.stage)
-  ? {bestOf: 3, targets: [21, 21, 21]}
+  ? {bestOf: 3, goldenPoint: true, targets: [15, 15, 15]}
   : {bestOf: 1, targets: [21]};
 const groupOf = match => match.stage.split(" · ")[0].slice(6);
 const targetSize = category => Object.values(GROUP_SLOTS[category]).flat().length;
@@ -71,14 +71,9 @@ function importPairs(data, file) {
 
 // Devuelve bloques ordenados. Las parejas que siguen en un mismo bloque
 // necesitan el sorteo de desempate previsto en la hoja Formato.
-function rankBlocks(rows, duels) {
+function rankBlocks(rows) {
   function rank(tied, criteria) {
     if (tied.length < 2) return [tied];
-    if (tied.length === 2 && criteria[0] !== "w") {
-      const [a, b] = tied;
-      const winner = duels.get([a.id, b.id].sort().join(":"));
-      if (winner) return winner === a.id ? [[a], [b]] : [[b], [a]];
-    }
     if (!criteria.length) return [tied];
     const [field, ...next] = criteria;
     const values = [...new Set(tied.map(row => row[field]))].sort((a, b) => b - a);
@@ -118,7 +113,6 @@ function competition(division, category) {
       if (pair) rows.set(pair.id, {id: pair.id, pair, slot, pj: 0, w: 0, pf: 0, pc: 0, diff: 0});
     }
     let complete = true;
-    const duels = new Map();
     for (const match of fixtures.filter(m => isGroup(m) && groupOf(m) === group)) {
       const game = readMatch(match, division, slotPair(match.a), slotPair(match.b));
       matches.set(match.id, game);
@@ -128,10 +122,9 @@ function competition(division, category) {
       a.pj++; b.pj++; a.pf += Number(s1); b.pf += Number(s2);
       a.pc += Number(s2); b.pc += Number(s1);
       rows.get(game.winner.id).w++;
-      duels.set([a.id, b.id].sort().join(":"), game.winner.id);
     }
     for (const row of rows.values()) row.diff = row.pf - row.pc;
-    const blocks = rankBlocks([...rows.values()], duels);
+    const blocks = rankBlocks([...rows.values()]);
     const order = division.confirmed[group];
     const confirmed = complete && acceptedOrder(blocks, order);
     tables[group] = {blocks, complete, confirmed, rows: confirmed ? order.map(id => rows.get(id)) : blocks.flat()};

@@ -45,19 +45,19 @@ function scoreValueIsValid(value) {
   return value === "" || (/^\d+$/.test(value) && Number.isSafeInteger(Number(value)));
 }
 
-function setScoreStatus(set, target) {
+function setScoreStatus(set, target, goldenPoint) {
   var s1 = scoreText(set && set.s1), s2 = scoreText(set && set.s2);
   var has1 = s1 !== "", has2 = s2 !== "";
   if (!scoreValueIsValid(s1) || !scoreValueIsValid(s2)) {
     return { valid: false, complete: false, winner: 0, message: "El marcador solo admite números enteros iguales o mayores que cero." };
   }
-  if (target === 21) {
+  if (target === 21 || goldenPoint) {
     const complete = has1 && has2;
-    const valid = Number(s1) <= 21 && Number(s2) <= 21 &&
-      (!complete || (Math.max(Number(s1), Number(s2)) === 21 && Number(s1) !== Number(s2)));
+    const valid = Number(s1) <= target && Number(s2) <= target &&
+      (!complete || (Math.max(Number(s1), Number(s2)) === target && Number(s1) !== Number(s2)));
     return { valid, complete: valid && complete,
       winner: valid && complete ? (Number(s1) > Number(s2) ? 1 : 2) : 0,
-      message: valid ? "" : "El set termina al llegar a 21, incluido el 21–20." };
+      message: valid ? "" : "El set termina al llegar a " + target + ", incluido el " + target + "–" + (target - 1) + "." };
   }
   if (!has1 || !has2) return { valid: true, complete: false, winner: 0, message: "" };
   var n1 = Number(s1), n2 = Number(s2);
@@ -102,7 +102,7 @@ function matchScoreStatus(match, format) {
   var sets = normalizedMatchSets(match || {}, format);
   var wins = [0, 0];
   for (var i = 0; i < sets.length; i++) {
-    var status = setScoreStatus(sets[i], format.targets[i]);
+    var status = setScoreStatus(sets[i], format.targets[i], format.goldenPoint);
     if (!status.valid) {
       return { valid: false, complete: false, winner: 0, sets: sets, setIndex: i, message: "Set " + (i + 1) + ": " + status.message };
     }
@@ -133,18 +133,18 @@ function matchScoreStatus(match, format) {
 function scoreSetIsEnabled(match, format, setIndex) {
   if (setIndex === 0) return true;
   var sets = normalizedMatchSets(match || {}, format);
-  var first = setScoreStatus(sets[0], format.targets[0]);
+  var first = setScoreStatus(sets[0], format.targets[0], format.goldenPoint);
   if (!first.valid || !first.complete) return false;
   if (setIndex === 1) return true;
-  var second = setScoreStatus(sets[1], format.targets[1]);
+  var second = setScoreStatus(sets[1], format.targets[1], format.goldenPoint);
   return second.valid && second.complete && first.winner !== second.winner;
 }
 
 function pruneUnusedSets(match, format) {
   if (format.bestOf !== 3) return;
   var sets = normalizedMatchSets(match, format);
-  var first = setScoreStatus(sets[0], format.targets[0]);
-  var second = setScoreStatus(sets[1], format.targets[1]);
+  var first = setScoreStatus(sets[0], format.targets[0], format.goldenPoint);
+  var second = setScoreStatus(sets[1], format.targets[1], format.goldenPoint);
   if (first.valid && first.complete && second.valid && second.complete && first.winner === second.winner) {
     sets[2] = emptyScoreSet();
   }

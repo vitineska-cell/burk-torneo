@@ -149,23 +149,23 @@ async function run() {
       });
       card.querySelector("[data-save]").click();
     };
-    save("F-01",[[21,21]]);
-    assert.equal(win.state.categories.Femenino.results["F-01"], undefined);
-    for (let n=1;n<=10;n++) save("F-"+String(n).padStart(2,"0"), [[21,20]]);
+    save("FG01",[[21,21]]);
+    assert.equal(win.state.categories.Femenino.results["FG01"], undefined);
+    for (let n=1;n<=10;n++) save("FG"+String(n).padStart(2,"0"), [[21,20]]);
     tab(win,"cuadros");
-    assert.ok(query(win,'[data-match="F-11"] input').disabled);
+    assert.ok(query(win,'[data-match="FS1"] input').disabled);
     tab(win,"clasificados");
     query(win,"[data-confirm]").click();
     tab(win,"cuadros");
-    save("F-11",[[21,18],[18,21],[21,20]]);
-    save("F-12",[[21,0],[21,0]]);
-    save("F-13",[[20,21],[19,21]]);
-    assert.match(win.buildSummary(),/F-13 Final/);
+    save("FS1",[[15,12],[12,15],[15,14]]);
+    save("FS2",[[15,0],[15,0]]);
+    save("FFIN",[[14,15],[13,15]]);
+    assert.match(win.buildSummary(),/FFIN Final/);
     assert.ok(!query(win,"#v-cuadros").textContent.includes("3.er puesto"));
     select(win,"Masculino");tab(win,"inscripcion");query(win,"#btn-draw").click();
     select(win,"Mixto");tab(win,"inscripcion");query(win,"#btn-draw").click();
     assert.deepEqual(Object.keys(win.state.categories.Mixto.groups).map(s => s[1]).sort(),
-      Array.from("AAAABBBCCCDDD"));
+      Array.from("AAAAABBBBCCCC"));
 
     let apiPuts = 0, apiGets = 0, publishedPayload = initial;
     let conflict = false;
@@ -217,9 +217,9 @@ async function run() {
     assert.ok(query(publicWindow,"#v-clas").textContent.includes(firstName.value));
     select(publicWindow,"Masculino");
     assert.equal(query(publicWindow,"#champ-banner").textContent,"");
-    assert.equal(publicWindow.document.querySelectorAll("#v-horario [data-match]").length,32);
+    assert.equal(publicWindow.document.querySelectorAll("#v-horario [data-match]").length,34);
     select(publicWindow,"Mixto");
-    assert.equal(publicWindow.document.querySelectorAll("#v-horario [data-match]").length,28);
+    assert.equal(publicWindow.document.querySelectorAll("#v-horario [data-match]").length,34);
     assert.deepEqual(publicErrors,[]);
     const embedErrors = [];
     embedPage = await JSDOM.fromURL(baseUrl + "/embed.html", {
@@ -236,7 +236,7 @@ async function run() {
       () => embedWindow.DATA && embedWindow.DATA.eventId === "almanzor-2026-11-21",
       "datos de la vista embebida"
     );
-    assert.equal(embedWindow.document.querySelectorAll("#v-horario [data-match]").length, 28);
+    assert.equal(embedWindow.document.querySelectorAll("#v-horario [data-match]").length, 34);
     assert.match(embedWindow.document.documentElement.textContent, /Torneo BÜRK Almanzor/);
     assert.ok(
       Array.from(embedWindow.document.querySelectorAll("style")).some((style) => style.textContent.includes("max-width:1400px")),

@@ -27,7 +27,7 @@ function scoreCard(game, editable) {
   const fields = (pair, source, key) => {
     const cells = status.sets.map((set, i) => {
       if (!editable) return '<span class="bk-score">' + (escHtml(set[key]) || '–') + '</span>';
-      return '<input class="score-in" type="number" inputmode="numeric" min="0" max="21" step="1" ' +
+      return '<input class="score-in" type="number" inputmode="numeric" min="0" max="' + rules.targets[i] + '" step="1" ' +
         'aria-label="' + escHtml(match.id + ' · ' + source + ' · set ' + (i + 1)) +
         '" data-field="' + key + '" data-set="' + i + '" value="' + escHtml(set[key]) + '"' + (a && b ? '' : ' disabled') + '>';
     }).join('');
@@ -36,8 +36,8 @@ function scoreCard(game, editable) {
   };
   return '<div class="panel" data-match="' + match.id + '"><div class="panel-head">' +
     match.start + '–' + match.end + ' · Pista ' + match.court + '<span class="rest">' + match.id + ' · ' + match.stage +
-    '</span></div><div class="bk-rule">' + (rules.bestOf === 1 ? '1 set a 21' : 'Mejor de 3 sets a 21') +
-    ' · punto de oro en 20–20</div>' + fields(a, match.a, "s1") + fields(b, match.b, "s2") +
+    '</span></div><div class="bk-rule">' + (rules.bestOf === 1 ? '1 set a 21' : 'Mejor de 3 sets a ' + rules.targets[0]) +
+    ' · punto de oro en ' + (rules.targets[0]-1) + '–' + (rules.targets[0]-1) + '</div>' + fields(a, match.a, "s1") + fields(b, match.b, "s2") +
     (editable && a && b ? '<div class="gen-box"><button class="btn" data-save="' + match.id +
       '">Guardar marcador</button></div>' : '') + '</div>';
 }
